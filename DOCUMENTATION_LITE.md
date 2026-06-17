@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.17.0-beta`<br>
-Last updated: `June 10, 2026`<br>
+As-of version: `1.17.1-beta`<br>
+Last updated: `June 17, 2026`<br>
 
 ---
 ---
@@ -130,9 +130,9 @@ VT has certain features that are non-configurable due to the vast amount of inte
 #### Java Inventory, Input, and Movement System (Lite)
 Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and input -> build action pipeline to be more continuous and precise. This new system borrows heavily from the mechanics of Minecraft Java Edition (MCJE). Here, 'build action' refers to an attack (left click) or interact (right click) input. Additionally, JIIMS also applies changes to packet handling to reduce some of the negative effects of latency.
 
-- MCBE has a longstanding client-side desynchronization issue where changes to the selected hotbar slot (mainhand/offhand equip state) are not reported to the server until the next game tick. Because item use and other inventory actions can occur at a higher frequency than this notification, there is a short window (up to one tick) in which the client may attempt to use an item before the server has been informed of the new equipped slot. In that case, the server can legitimately reject the action because it does not match the server's current view of the player's equipped item. JIIMS addresses the issue by sending equip/selection updates immediately and in-order relative to subsequent item-use actions, ensuring the server receives the slot change before the corresponding use occurs. In practice, many modern servers implement their own mitigation by tolerating or reconciling this mismatch, so the difference may be subtle depending on the server.
+- MCBE has a longstanding client-side desynchronization issue where changes to equipment slots (such as which hotbar slot is selected) are not reported to the server until the next game tick. Because item use and other inventory transactions can occur at a higher frequency than a tick, there is a short window (up to one tick) in which the client may attempt to use an item before the server is informed of the new changes to the relevant slot. In that case, the server can legitimately reject the action because it does not match the server's current view of the player's equipment items. JIIMS addresses this issue by sending the relevant updates immediately and in-order relative to subsequent item-use actions, ensuring the server receives it before the corresponding use occurs. In practice, many modern servers implement their own mitigation by tolerating or reconciling this bug, so the difference may be subtle depending on the server.
 
-- In vanilla MCBE, certain 'simulation-tick' item-use interactions (automatically generated while interact is held, rather than from discrete input presses) are still forwarded to the server even when they are predicted to fail. This contributes to client/server block placement desynchronization and reduced item-use reliability on higher latency connections. JIIMS cancels these predicted-failure interactions to ensure only meaningful item-use actions are transmitted during continuous use (e.g., holding interact while placing blocks or using items).
+- In vanilla MCBE, certain 'simulation-tick' item-use interactions (automatically generated while interact is held, rather than from discrete input presses) are still forwarded to the server even when they are predicted to fail. This contributes to client/server block placement desynchronization and reduced item-use reliability on higher latency connections. JIIMS cancels these predicted-failure interactions to ensure only meaningful item-use actions are sent during continuous use (e.g., holding interact while placing blocks or using items).
 
 ---
 
@@ -293,7 +293,7 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 #### `disable_chat_tts_hotkey`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
-Disables the hardcoded `Control` + `B` hotkey to toggle the vanilla `Text To Speech For Chat` setting.
+- Disables the hardcoded `Control` + `B` hotkey to toggle the vanilla `Text To Speech For Chat` setting.
 
 ---
 
@@ -330,7 +330,7 @@ Disables the hardcoded `Control` + `B` hotkey to toggle the vanilla `Text To Spe
 	- `base_ui_color_fills_ui_slot_area`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Determines whether the base enchant glint for UI items fills the full inventory slot area instead of only the non-transparent pixels of the item sprite.
+		- Determines whether the base enchant glint for UI items fills the full inventory slot area instead of only the non-transparent pixels of the item sprite. Currently, this option does not properly blend the enchant overlay's alpha channel when the vanilla `Anti-aliasing` setting is greater than 1.
 	- `smooth_world_uv`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -809,6 +809,10 @@ Disables the hardcoded `Control` + `B` hotkey to toggle the vanilla `Text To Spe
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Overrides the 1.13+ persona dressing room screen with the 1.12.1 (and prior) skin picker screen. An additional advantage of this screen is that the layout is arguably more user-friendly and does not require any workarounds to display user-made skin packs with custom geometry or capes. Note: this is a deprecated feature. `skin_sideloader` should be used for changing skins instead of via this screen.
+	- `disconnect_screen`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Overrides the web-based Ore UI disconnect screen with the legacy JSON-based screen.
 	- `play_and_create_world_screens`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -1178,7 +1182,7 @@ Disables the hardcoded `Control` + `B` hotkey to toggle the vanilla `Text To Spe
 
 #### `snaplook`
 - Type: `object`
-- Temporarily switches the camera to a configured perspective.
+- Temporarily switches the camera to a configured perspective. If freelook is active, freelook takes precedence over snaplook.
 - Fields:
 	- `enabled`
 		- Type: `bool`
