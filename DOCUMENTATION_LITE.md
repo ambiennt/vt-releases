@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.17.1-beta`<br>
-Last updated: `June 17, 2026`<br>
+As-of version: `1.17.2-beta`<br>
+Last updated: `June 29, 2026`<br>
 
 ---
 ---
@@ -108,6 +108,14 @@ Describes various network statistics, such as ping and total throughput. Aliases
 
 Example usage:
 - `.netstat true`
+
+---
+
+#### `relog`
+Rejoins the current server. This is useful for quickly reconnecting without manually disconnecting and reselecting the server. This command only applies to external servers; if used while in a local world, the command is ignored.
+
+Example usage:
+- `.relog`
 
 ---
 
@@ -861,7 +869,36 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 #### `load_resource_pack_shader_materials`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
-- Allows `*.material.bin` files to be loaded by resource packs. Overwritten files must be placed in the `./renderer/materials/` folder, relative to the current resource pack root.
+- Allows `*.material.bin` files to be loaded by resource packs. Overwritten files must be placed in the `.\renderer\materials\` folder, relative to the current resource pack root.
+
+---
+
+#### `mention_sound`
+- Type: `object`
+- Plays a configurable sound when an incoming chat message mentions the signed-in player's display name or one of the configured additional triggers. Chat formatting codes are ignored when checking for mentions.
+- Fields:
+	- `enabled`
+    	- Type: `bool`
+    	- Allowed values: {`true`, `false`}
+    	- Toggles the parent object.
+	- `sound_identifier`
+    	- Type: `string`
+    	- Sets the sound to play when a mention is detected. This should be the name of a sound event defined in `.\sounds\sound_definitions.json` of the active resource pack. The same sound identifier can also be tested via the vanilla `/playsound` command.
+	- `volume`
+    	- Type: `float`
+    	- Allowed values: [`0.0`, `+∞`)
+    	- Sets the mention sound volume.
+	- `pitch`
+    	- Type: `float`
+    	- Allowed values: [`0.0`, `+∞`)
+    	- Sets the mention sound pitch.
+	- `require_at_symbol`
+    	- Type: `bool`
+    	- Allowed values: {`true`, `false`}
+    	- When `true`, the player's display name only triggers the sound when mentioned with an `@` prefix, such as `@username`. When `false`, the player's display name may also trigger the sound as a standalone space-delimited word.
+	- `additional_triggers`
+    	- Type: `array` of non-empty `string`
+    	- Adds extra case-insensitive mention triggers. Each trigger matches as a standalone space-delimited word. Empty triggers are ignored.
 
 ---
 
