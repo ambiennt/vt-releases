@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.17.2-beta`<br>
-Last updated: `June 29, 2026`<br>
+As-of version: `1.17.2-rc.1`<br>
+Last updated: `July 8, 2026`<br>
 
 ---
 ---
@@ -76,6 +76,15 @@ Example usage:
 - `.customchat disable`
 - `.customchat connect`
 - `.customchat disconnect`
+
+---
+
+#### `directory`
+Opens the VT directory in the system file explorer. Aliases: `dir`.
+
+Example usage:
+- `.directory`
+- `.dir`
 
 ---
 
