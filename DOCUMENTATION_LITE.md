@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.17.2-rc.1`<br>
-Last updated: `July 8, 2026`<br>
+As-of version: `1.18.0-beta`<br>
+Last updated: `July 30, 2026`<br>
 
 ---
 ---
@@ -21,27 +21,31 @@ The current versions that VT supports are: `1.21.114`.
 ### Installation and Setup
 
 At any given time, VT will likely NOT support the latest version of Minecraft Bedrock Edition (MCBE). Therefore, it is recommended that the end user turn off Microsoft Store auto-updates (if applicable), and use a 3rd party version manager, such as [mc-w10-version-launcher
-](https://github.com/MCMrARM/mc-w10-version-launcher) with [this](https://raw.githubusercontent.com/ddf8196/mc-w10-versiondb-auto-update/master/versions.json.min) version list endpoint. This approach also installs MCBE as an unpackaged installation (loose files in a normal, writable folder rather than in `C:\Program Files\WindowsApps\`), which avoids UWP sandboxing restrictions and provides the best compatibility.
+](https://github.com/MCMrARM/mc-w10-version-launcher). This approach also installs MCBE as an unpackaged installation (loose files in a normal, writable folder rather than in `C:\Program Files\WindowsApps\`), which avoids UWP sandboxing restrictions and provides the best compatibility.
 
-The mod (in `.dll` format) can be 'injected' into a running instance of MCBE through any DLL injector of choice. [This injector](https://github.com/ambiennt/MCBE-DLL-Injector/releases/) is recommended due to the simple UI and minimal dependencies.
+The mod (in `.dll` format) can be 'injected' into a running instance of MCBE through any DLL injector of choice. [MCBE-DLL-Injector](https://github.com/ambiennt/MCBE-DLL-Injector/releases/) is recommended due to the simple UI and minimal dependencies.
 
 A successful injection will show a watermark, i.e. `Vanilla Tweaks Lite by Ambient`, followed by a version tag in the MCBE window titlebar. The mod can be unloaded, or 'ejected' by pressing `Control` + `L` at the same time on your keyboard, or typing `.eject` in the in-game chat. See the [Commands](#commands) section for a full list of commands.
 
-For the sake of simplicity, and so that more focus can be diverted to core features, this mod has no UI. All configurable settings are deserialized from `%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\RoamingState\VanillaTweaks\config.json`. This directory can be accessed via the Windows `Run` application. The `VanillaTweaks` directory, and the corresponding `config.json` file are created upon inject if they do not already exist. The configuration file is read upon inject and execution of the in-game `.config reload` command.
+For the sake of simplicity, and so that more focus can be diverted to core features, this mod has no UI. All VT configuration and user-provided files are stored in the mod directory:
+
+`%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\RoamingState\VanillaTweaks\`.
+
+This directory can be accessed through the Windows `Run` application. The mod directory and its corresponding `config.json` file at the directory root are created upon inject if they do not already exist. The working config file is read upon inject and execution of the in-game `.config reload` command.
 
 ---
 ---
 
 ### Commands
 
-Commands are only executable through the in-game chat interface. The default command prefix is `.`, but is configurable via the `command_prefix` setting (see below). The syntax for running a command follows similarly to vanilla commands, i.e. \<prefix\> \<command\> \<args...\>. Command arguments are delimited by one or more space. String arguments with spaces can be escaped with quotes, e.g. "my spaced argument" -> `my spaced argument`.
+Commands are only executable through the in-game chat interface. The default command prefix is `.`, but is configurable via the `command_prefix` setting (see below). The syntax for running a command follows similarly to vanilla commands, i.e. `<prefix> <command> <args...>`. Command arguments are delimited by one or more spaces. To pass text containing spaces as a single argument, surround the entire argument with quotes; the quoted text is then parsed as one argument with the surrounding quotes removed. For example, `"my spaced argument"` is parsed as the single argument `my spaced argument`.
 
 ---
 
-#### `config <reload/open/copy/paste>`
+#### `config <reload [file-name: string]/open/copy/paste>`
 Provides config utility functions. Aliases: `cfg`.
 
-The `reload` enum reloads the current `config.json` data at runtime. This differs from ejecting, then re-injecting VT, because this will not serialize its config options back to the `config.json` and overwrite any tentative changes.
+The `reload` enum reloads config data at runtime. When `file-name` is omitted, the default `config.json` file is reloaded. When `file-name` is specified, the corresponding file is loaded from the `.\configs\` folder relative to the mod directory. This differs from ejecting, then re-injecting VT, because this will not serialize its config options back to the default `config.json` and overwrite any tentative changes.
 
 The `open` enum opens the current `config.json` file with the system-defined program.
 
@@ -80,7 +84,7 @@ Example usage:
 ---
 
 #### `directory`
-Opens the VT directory in the system file explorer. Aliases: `dir`.
+Opens the mod directory in the system file explorer. Aliases: `dir`.
 
 Example usage:
 - `.directory`
@@ -89,14 +93,14 @@ Example usage:
 ---
 
 #### `eject`
-Unloads VT from MCBE. This process takes about 0.25 seconds. If successful (although this command should never fail), the watermark in the titlebar should disappear.
+Unloads VT from MCBE. This process takes about 200 milliseconds. If successful (although this command should never fail), the watermark in the titlebar should disappear.
 
 Example usage:
 - `.eject`
 
 ---
 
-#### `help [pageNumber: int = 1]`
+#### `help [page-number: int = 1]`
 Shows a paginated list of client commands with their aliases and usage. Displays up to 20 commands per page (1-indexed). If the requested page is out of range, the nearest valid page is shown.
 
 Example usage:
@@ -128,8 +132,8 @@ Example usage:
 
 ---
 
-#### `stealskin <playerName: string> [fetchFromWorld: bool = false]`
-Steals a player's skin, cape, and geometry data. Player name lookups are case insensitive. `fetchFromWorld` retrieves the skin data from the target player in the world as opposed to the pause menu's player list. Prefer this option if there is no skin data from the player list, or the skin data from the player list undesirably differs. Retrieved skin files are outputted in `%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\RoamingState\VanillaTweaks\StolenSkins\`.
+#### `stealskin <player-name: string> [fetch-from-world: bool = false]`
+Steals a player's skin, cape, and geometry data. Player name lookups are case insensitive. `fetch-from-world` retrieves the skin data from the target player in the world instead of from the pause menu's player list. Prefer this option if no skin data is available from the player list, or if the skin retrieved from the player list differs from the player's current in-world skin. Retrieved skin files are outputted to the `.\stolen_skin_assets\` folder relative to the mod directory.
 
 Example usage:
 - `.stealskin username123`
@@ -145,16 +149,26 @@ VT has certain features that are non-configurable due to the vast amount of inte
 ---
 
 #### Java Inventory, Input, and Movement System (Lite)
-Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and input -> build action pipeline to be more continuous and precise. This new system borrows heavily from the mechanics of Minecraft Java Edition (MCJE). Here, 'build action' refers to an attack (left click) or interact (right click) input. Additionally, JIIMS also applies changes to packet handling to reduce some of the negative effects of latency.
+
+Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and input -> build action pipeline to be more continuous and precise. This new system borrows heavily from the mechanics of Minecraft Java Edition (MCJE). Here, 'build action' refers to an attack (left click) or interact (right click) input. Additionally, JIIMS also applies changes to local player movement and packet handling to reduce some of the negative effects of latency.
 
 - MCBE has a longstanding client-side desynchronization issue where changes to equipment slots (such as which hotbar slot is selected) are not reported to the server until the next game tick. Because item use and other inventory transactions can occur at a higher frequency than a tick, there is a short window (up to one tick) in which the client may attempt to use an item before the server is informed of the new changes to the relevant slot. In that case, the server can legitimately reject the action because it does not match the server's current view of the player's equipment items. JIIMS addresses this issue by sending the relevant updates immediately and in-order relative to subsequent item-use actions, ensuring the server receives it before the corresponding use occurs. In practice, many modern servers implement their own mitigation by tolerating or reconciling this bug, so the difference may be subtle depending on the server.
 
 - In vanilla MCBE, certain 'simulation-tick' item-use interactions (automatically generated while interact is held, rather than from discrete input presses) are still forwarded to the server even when they are predicted to fail. This contributes to client/server block placement desynchronization and reduced item-use reliability on higher latency connections. JIIMS cancels these predicted-failure interactions to ensure only meaningful item-use actions are sent during continuous use (e.g., holding interact while placing blocks or using items).
 
+- The client's latency-sensitive local actor states now ignore stale server-initiated metadata corrections. This includes sneaking, sprinting, item use, gliding, spin attack, swimming, and crawling. When the server sends actor flag updates for the local player, JIIMS preserves the client's currently predicted values for these states instead of allowing the server to overwrite them with potentially delayed data. This reduces visible twitching and interruption on high latency connections, such as sprint/sneak jitter, crossbow charging flicker, swimming/crawling state corrections, and other short-lived state desynchronizations. Note: these states are preserved only for local client continuity; the server remains authoritative over whether the corresponding gameplay action is accepted.
+
+- The local player's hitbox and collision box are predicted client-side instead of being sourced exclusively from server metadata. Server updates to the local player's width, height, hitbox, and collision box metadata are ignored, while actor scale updates are still allowed. Instead, JIIMS updates the local collision shape directly in response to client-predicted pose changes. This improves consistency for movement states that depend on the player's current pose, such as sneaking, swimming, crawling, and gliding, without waiting for the server to send updated collision metadata. As with other JIIMS prediction changes, this affects the client's local prediction and presentation only; the server remains authoritative for gameplay and collision validation.
+
+- Some servers implement a server-authoritative movement speed system, in which the default movement speed, and (de)buffs from movement-related mob effects, like speed and slowness, are superfluously sent to the client. This can make movement speed feel delayed and occasionally unresponsive on high latency. To combat this, JIIMS performs client-side calculations of the local player's own movement speed and ignores server corrections.
+
+- The cursor position is reinitialized when the cursor is released and becomes visible. In vanilla MCBE, the cursor position may remain stale until the mouse is moved again, which can cause UI interactions to use an outdated cursor location. Reinitializing the mouse position ensures UI interactions use the correct cursor location immediately.
+
 ---
 
 #### Performance Improvements
-VT is already optimized for minimal overhead. There are a few zero-cost optimizations implemented to offset any performance penalties one might incur when using this mod. In practice, overall performance is approximately unchanged, with variation depending on hardware and configuration.
+
+VT is already optimized for minimal overhead. There are a few built-in zero-cost optimizations to offset any performance penalties one might incur when using this mod. Additionally, several configurable features documented below can be used to further reduce rendering or processing overhead. In practice, overall performance is approximately unchanged by default, with variation depending on hardware and configuration.
 
 ---
 ---
@@ -182,10 +196,12 @@ Examples:
 
 ### Configurable Features
 
+---
+
 #### `always_show_paper_doll`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
-- Forces the paper doll to remain visible, provided that the vanilla `Hide Paper Doll` setting is disabled. In vanilla, the paper doll may appear only under certain conditions, such as while sneaking or for 1 second after the player stops sneaking; this feature bypasses those temporary visibility rules.
+- Forces the paper doll to remain visible, provided that the vanilla `Hide Paper Doll` setting is disabled. In vanilla MCBE, the paper doll may appear only under certain conditions, such as while sneaking or for 1 second after the player stops sneaking; this feature bypasses those temporary visibility rules.
 
 ---
 
@@ -217,10 +233,45 @@ Examples:
 
 ---
 
+#### `client_side_container_opening`
+- Type: `object`
+- Opens configured container screens client-side without waiting for the server to acknowledgement. This makes opening supported containers effectively instant, instead of dependent on ping. Compatibility is server-dependent because the client must be able to predict the protocol-level information that the server expects before receiving its acknowledgement.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `server_whitelist`
+		- Type: `array` of `string`
+		- Allowed values: *any server address*
+		- Specifies the server addresses on which client-side container opening is enabled when `use_server_whitelist` is enabled.
+	- `use_server_whitelist`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Restricts client-side container opening to the server addresses specified by `server_whitelist`. When disabled, client-side container opening may be used on any server.
+	- `containers`
+		- Type: `object`
+		- Configures client-side opening for individual container types.
+		- Fields:
+			- `inventory`
+				- Type: `object`
+				- Configures client-side opening of the player inventory.
+				- Fields:
+					- `enabled`
+						- Type: `bool`
+						- Allowed values: {`true`, `false`}
+						- Toggles the parent object.
+					- `container_id`
+						- Type: `int`
+						- Allowed values: [`-128`, `127`]
+						- Specifies the protocol-level container ID used when opening the player inventory. `0` is commonly used as the static inventory container ID. This setting is an implementation detail and should only be changed if you know what the target server expects. Some servers assign the expected container ID dynamically; because the client cannot predict such an ID before the server acknowledges the request, client-side inventory opening will not work on those servers.
+
+---
+
 #### `command_prefix`
 - Type: `string`
 - Allowed values: *all non-empty strings whose first character is not `/`*
-Sets the prefix by which client commands are executed. Messages beginning with this prefix are parsed as client commands; other messages are sent as normal chat.
+- Sets the prefix by which client commands are executed. Messages beginning with this prefix are parsed as client commands; other messages are sent as normal chat.
 
 ---
 
@@ -321,6 +372,22 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 
 ---
 
+#### `disable_flying_inventory_item_anim`
+
+- Type: `bool`
+- Allowed values: {`true`, `false`}
+- Disables the 'flying item' animation when item stacks are moved between container slots, such as when shift-clicking an item stack or using an inventory hotkey. This is a strictly visual change and does not affect how or when the item stack is moved.
+
+---
+
+#### `disable_hotbar_scrolling`
+
+- Type: `bool`
+- Allowed values: {`true`, `false`}
+- Prevents mouse wheel scrolling from changing the currently selected hotbar slot. Hotbar slots may still be selected through their corresponding hotkeys. This feature is primarily intended to help the user learn and rely on hotbar hotkeys instead of scrolling through slots with the mouse wheel.
+
+---
+
 #### `disable_projectile_throw_swing_anim`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
@@ -376,6 +443,7 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 		- Type: `float`
 		- Allowed values: *unbounded*
 		- Scales the UV animation speed for the enchant glint rendered on world items and equipment. Higher values make the glint move faster. Lower values make it move more slowly. This setting overrides the vanilla `Glint speed` setting.
+
 ---
 
 #### `entity_hitboxes`
@@ -597,10 +665,10 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 		- Type: `int`
 		- Allowed values: see [Key Codes](#key-codes) for a list of enumerated values.
 		- The key code used to drop the entire hovered item stack while in a container screen. This is also beneficial for the same reasons as `drop_hotbar_selected_stack_key`.
-	- `flying_item_anim`
+	- `flying_inventory_item_anim`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Toggles the 'flying item' animation when an item stack is being swapped. This is the same animation that plays in vanilla MCBE when an item stack is shift-clicked into another slot. Disabling this animation means that the swap appears 'instant'.
+		- Toggles the 'flying item' animation when an item stack is being swapped. This is the same animation that plays in vanilla MCBE when an item stack is shift-clicked into another slot. Disabling this animation means that the swap appears 'instant'. This setting has no effect while the `disable_flying_inventory_item_anim` feature is enabled.
 
 ---
 
@@ -875,13 +943,6 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 
 ---
 
-#### `load_resource_pack_shader_materials`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Allows `*.material.bin` files to be loaded by resource packs. Overwritten files must be placed in the `.\renderer\materials\` folder, relative to the current resource pack root.
-
----
-
 #### `mention_sound`
 - Type: `object`
 - Plays a configurable sound when an incoming chat message mentions the signed-in player's display name or one of the configured additional triggers. Chat formatting codes are ignored when checking for mentions.
@@ -892,7 +953,7 @@ Sets the prefix by which client commands are executed. Messages beginning with t
     	- Toggles the parent object.
 	- `sound_identifier`
     	- Type: `string`
-    	- Sets the sound to play when a mention is detected. This should be the name of a sound event defined in `.\sounds\sound_definitions.json` of the active resource pack. The same sound identifier can also be tested via the vanilla `/playsound` command.
+    	- Sets the sound to play when a mention is detected. This should be the name of a sound event defined in `.\sounds\sound_definitions.json` of an active resource pack (such as the vanilla one). The same sound identifier can also be tested via the vanilla `/playsound` command.
 	- `volume`
     	- Type: `float`
     	- Allowed values: [`0.0`, `+∞`)
@@ -1028,6 +1089,64 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 
 ---
 
+#### `particle_options`
+- Type: `object`
+- Controls particle rendering globally and on a per-particle basis. Particle emitters can be prevented from rendering beyond a configured distance from the camera, or disabled entirely.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `base_emitter_block_render_distance`
+		- Type: `int`
+		- Allowed values: [`0`, `4294967295`]
+		- Sets the default maximum render distance, in blocks, between the camera and a particle emitter's world position. This value is used for particles that do not define a per-particle `emitter_block_render_distance`.
+	- `disable_all_rendering`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables all particle rendering. When enabled, this setting overrides all entries in `particles`.
+	- `particles`
+		- Type: `object`
+		- Configures rendering overrides for individual particle identifiers. Entries may be added or removed as needed; particles without an entry use the settings inherited from the parent object. Particle identifiers can be found in the particle JSON files within the `.\particles\` folder of the an active resource pack (such as the vanilla one). Most particles can be previewed with the vanilla `/particle` command, although some require context-dependent data that the command does not provide.
+		- Fields:
+			- `<particle identifier>`
+				- Type: `object`
+				- Configures rendering overrides for the specified particle. Both fields are optional; omitted fields use their respective fallback behavior.
+				- Fields:
+					- `emitter_block_render_distance`
+						- Type: `int`
+						- Allowed values: [`0`, `4294967295`]
+						- Overrides `base_emitter_block_render_distance` for this particle. When omitted, `base_emitter_block_render_distance` is used.
+					- `disable_rendering`
+						- Type: `bool`
+						- Allowed values: {`true`, `false`}
+						- Disables rendering for this particle. When omitted, rendering is not individually disabled.
+	- Below is an example config that limits critical-hit particles and block destruction particles to 32 blocks, while completely disabling the mob spell particle:
+	```json
+	{
+		// ...
+		"particle_options": {
+			"base_emitter_block_render_distance": 64,
+			"disable_all_rendering": false,
+			"enabled": true,
+			"particles": {
+				"minecraft:basic_crit_particle": {
+					"emitter_block_render_distance": 32
+				},
+				"minecraft:block_destruct": {
+					"emitter_block_render_distance": 32
+				},
+				"minecraft:mobspell_emitter": {
+					"disable_rendering": true
+				}
+			}
+		}
+		// ...
+	}
+	```
+
+---
+
 #### `perspective_fov`
 - Type: `object`
 - Controls the camera field of view (FOV) independently for each perspective. This allows fine-tuning the perceived zoom or spatial distortion when switching between first-person and third-person views. The valid range matches the vanilla `FOV` slider setting, typically `30.0` - `110.0` degrees.
@@ -1081,10 +1200,6 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Toggles the parent object.
-	- `disable_particle_rendering`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Disables all in-game particles from rendering. Particle rendering in MCBE is very computationally expensive on the GPU, so enabling this setting will net a very large performance improvement.
 	- `disable_sky_rendering`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -1164,18 +1279,26 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 
 ---
 
+#### `shader_material_sideloader`
+
+- Type: `bool`
+- Allowed values: {`true`, `false`}
+- Allows custom `*.material.bin` shader material files to be loaded from the `.\shader_materials\` folder relative to the mod directory. Files placed in this folder override the corresponding shader materials loaded by MCBE.
+
+---
+
 #### `skin_sideloader`
 - Type: `object`
-- Loads a custom player skin and optional cape directly from disk upon joining a server, bypassing the in-game skin menu. This can help resolve issues where skins fail to load or sync through the vanilla skin system. Skin and cape files are expected to be located relative to the configuration directory: `%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\RoamingState\VanillaTweaks\`.
+- Loads a custom player skin and optional cape directly from disk upon joining a server, bypassing the in-game skin menu. This can help resolve issues where skins fail to load or sync through the vanilla skin system. Skin and cape files are expected to be located in the `.\skin_assets\` folder relative to the mod directory.
 - Fields:
 	- `enabled`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Toggles the parent object.
-	- `cape_filename`
+	- `cape_file_name`
 		- Type: `string`
-		- Allowed values: *any valid `.png` filename*
-		- Specifies the filename of the cape texture to load. The path is relative to the configuration directory, and the file must be located in the configuration directory root. Supported texture dimensions: `64x32` pixels. Example: `my_cape.png`.
+		- Allowed values: *any valid `.png` file name*
+		- Specifies the file name of the cape texture to load from the `.\skin_assets\` folder relative to the mod directory. Supported texture dimensions: `64x32` pixels. Example: `my_cape.png`.
 	- `is_slim_arm`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -1192,10 +1315,10 @@ Sets the prefix by which client commands are executed. Messages beginning with t
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Controls whether the cape texture is displayed on the elytra when equipped. When disabled, the dedicated elytra texture is shown instead. This setting should be disabled if the cape texture does not include an elytra part.
-	- `skin_filename`
+	- `skin_file_name`
 		- Type: `string`
-		- Allowed values: *any valid `.png` filename*
-		- Specifies the filename of the skin texture to load. The path is relative to the configuration directory, and the image file must be located in the configuration directory root. Supported texture dimensions: `64x32`, `64x64`, or `128x128` pixels. Example: `my_skin.png`.
+		- Allowed values: *any valid `.png` file name*
+		- Specifies the file name of the skin texture to load from the `.\skin_assets\` folder relative to the mod directory. Supported texture dimensions: `64x32`, `64x64`, or `128x128` pixels. Example: `my_skin.png`.
 
 ---
 
