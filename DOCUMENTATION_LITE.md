@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.18.0-beta`<br>
-Last updated: `July 30, 2026`<br>
+As-of version: `1.18.0-rc.1`<br>
+Last updated: `August 8, 2026`<br>
 
 ---
 ---
@@ -20,18 +20,69 @@ The current versions that VT supports are: `1.21.114`.
 
 ### Installation and Setup
 
-At any given time, VT will likely NOT support the latest version of Minecraft Bedrock Edition (MCBE). Therefore, it is recommended that the end user turn off Microsoft Store auto-updates (if applicable), and use a 3rd party version manager, such as [mc-w10-version-launcher
-](https://github.com/MCMrARM/mc-w10-version-launcher). This approach also installs MCBE as an unpackaged installation (loose files in a normal, writable folder rather than in `C:\Program Files\WindowsApps\`), which avoids UWP sandboxing restrictions and provides the best compatibility.
+At any given time, VT will likely **not** support the latest version of Minecraft Bedrock Edition (MCBE). It is therefore recommended that users disable automatic Microsoft Store updates (if applicable) and use a third-party version manager, such as [mc-w10-version-launcher](https://github.com/MCMrARM/mc-w10-version-launcher), to install and manage supported versions of the game.
 
-The mod (in `.dll` format) can be 'injected' into a running instance of MCBE through any DLL injector of choice. [MCBE-DLL-Injector](https://github.com/ambiennt/MCBE-DLL-Injector/releases/) is recommended due to the simple UI and minimal dependencies.
+**To ensure proper functionality, VT requires MCBE to be installed as an unpackaged application.** An unpackaged installation stores the game as loose files in a normal, writable directory rather than under `C:\Program Files\WindowsApps\`. Running VT with the standard Microsoft Store-packaged installation is unsupported and may cause some features to behave incorrectly or fail entirely due to UWP sandboxing and filesystem restrictions. `mc-w10-version-launcher` installs MCBE in the required unpackaged form and is therefore the recommended installation method.
 
-A successful injection will show a watermark, i.e. `Vanilla Tweaks Lite by Ambient`, followed by a version tag in the MCBE window titlebar. The mod can be unloaded, or 'ejected' by pressing `Control` + `L` at the same time on your keyboard, or typing `.eject` in the in-game chat. See the [Commands](#commands) section for a full list of commands.
+The mod, distributed as a `.dll`, must be injected into a running instance of MCBE using a DLL injector. Any compatible injector may be used, though [MCBE-DLL-Injector](https://github.com/ambiennt/MCBE-DLL-Injector/releases/) is recommended for its simple UI and minimal dependencies.
 
-For the sake of simplicity, and so that more focus can be diverted to core features, this mod has no UI. All VT configuration and user-provided files are stored in the mod directory:
+Some antivirus software may incorrectly flag or quarantine the VT DLL. If this occurs, adding the DLL or VT directory as an antivirus exclusion may be necessary. For users running Windows Defender, [Defender Control](https://github.com/pgkt04/defender-control) is recommended if fully disabling the antivirus is required.
 
-`%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\RoamingState\VanillaTweaks\`.
+A successful injection will display the `Vanilla Tweaks Lite by Ambient` watermark and append a version tag to the MCBE window title bar. VT can be unloaded, or "ejected," by pressing `Ctrl` + `L` or by entering `.eject` in the in-game chat. See the [Commands](#commands) section for a complete list of available commands.
 
-This directory can be accessed through the Windows `Run` application. The mod directory and its corresponding `config.json` file at the directory root are created upon inject if they do not already exist. The working config file is read upon inject and execution of the in-game `.config reload` command.
+For simplicity, and to keep development focused on core features, VT does not provide a configuration UI. All configuration and user-provided files are stored in the mod directory:
+
+`%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\RoamingState\VanillaTweaks\`
+
+This directory can be opened by entering the path above into the Windows `Run` dialog. The mod directory and its root `config.json` file are created automatically upon injection if they do not already exist. The active `config.json` is loaded when VT is injected and can be reloaded at runtime using the in-game `.config reload` command.
+
+---
+---
+
+### Syntax Legend
+
+#### Command Syntax
+
+Command arguments use the following notation:
+
+- `<name: type>` = a required argument
+- `[name: type]` = an optional argument
+- `[name: type = value]` = an optional argument with the specified default value
+- `name` identifies the argument
+- `type` identifies the expected value type
+
+For example:
+
+`example <required-value: string> [optional-value: bool = false]`
+
+requires a `string` argument named `required-value` and accepts an optional `bool` argument named `optional-value`. If `optional-value` is omitted, it defaults to `false`.
+
+Where multiple literal values are separated by `/`, one of the listed values must be specified. For example:
+
+`example <start [mode: string]/stop/status>`
+
+requires one of `start`, `stop`, or `status`. The `start` value additionally accepts an optional `string` argument named `mode`.
+
+#### Allowed Values
+
+The `Allowed values` field uses set and interval notation:
+
+- `{...}` = a finite set of explicitly allowed values, e.g. `{0, 1, 2}`
+- `[a, b]` = a closed interval; both endpoints are included
+- `(a, b)` = an open interval; both endpoints are excluded
+- `[a, b)` / `(a, b]` = a half-open interval; only one endpoint is included
+
+#### Server Addresses
+
+Server addresses use the `<address>:<port>` format. The `address` may be a DNS hostname or a numeric IP address, and `port` must be a value in the range `[0, 65535]`.
+
+The `*` symbol may be used as a port wildcard, meaning "all ports for this address."
+
+Examples:
+
+- `127.0.0.1:3000`
+- `play.example1.net:19132`
+- `geo.server.com:*`
 
 ---
 ---
@@ -47,7 +98,7 @@ Provides config utility functions. Aliases: `cfg`.
 
 The `reload` enum reloads config data at runtime. When `file-name` is omitted, the default `config.json` file is reloaded. When `file-name` is specified, the corresponding file is loaded from the `.\configs\` folder relative to the mod directory. This differs from ejecting, then re-injecting VT, because this will not serialize its config options back to the default `config.json` and overwrite any tentative changes.
 
-The `open` enum opens the current `config.json` file with the system-defined program.
+The `open` enum opens the current `config.json` file using the system-defined program. If no suitable default application is available, the Windows application picker is opened so that a program can be selected manually.
 
 The `copy` enum copies the current `config.json` contents to the system clipboard.
 
@@ -55,6 +106,7 @@ The `paste` enum reads the contents of the system clipboard and applies it as th
 
 Example usage:
 - `.config reload`
+- `.config reload alternate_config.json`
 - `.config open`
 - `.config copy`
 - `.config reload`
@@ -152,9 +204,13 @@ VT has certain features that are non-configurable due to the vast amount of inte
 
 Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and input -> build action pipeline to be more continuous and precise. This new system borrows heavily from the mechanics of Minecraft Java Edition (MCJE). Here, 'build action' refers to an attack (left click) or interact (right click) input. Additionally, JIIMS also applies changes to local player movement and packet handling to reduce some of the negative effects of latency.
 
-- MCBE has a longstanding client-side desynchronization issue where changes to equipment slots (such as which hotbar slot is selected) are not reported to the server until the next game tick. Because item use and other inventory transactions can occur at a higher frequency than a tick, there is a short window (up to one tick) in which the client may attempt to use an item before the server is informed of the new changes to the relevant slot. In that case, the server can legitimately reject the action because it does not match the server's current view of the player's equipment items. JIIMS addresses this issue by sending the relevant updates immediately and in-order relative to subsequent item-use actions, ensuring the server receives it before the corresponding use occurs. In practice, many modern servers implement their own mitigation by tolerating or reconciling this bug, so the difference may be subtle depending on the server.
+- MCBE has a longstanding client-side desynchronization issue where changes to equipment slots (such as which hotbar slot is selected) are not reported to the server until the next game tick. Because item use and other inventory transactions can occur at a higher frequency than a tick, there is a short window (up to one tick) in which the client may attempt to use an item before the server is informed of the new changes to the relevant slot. In that case, the server can legitimately reject the action because it does not match the server's current view of the local player's equipment items. JIIMS addresses this issue by sending the relevant updates immediately and in-order relative to subsequent item-use actions, ensuring the server receives it before the corresponding use occurs. In practice, many modern servers implement their own mitigation by tolerating or reconciling this bug, so the difference may be subtle depending on the server.
 
 - In vanilla MCBE, certain 'simulation-tick' item-use interactions (automatically generated while interact is held, rather than from discrete input presses) are still forwarded to the server even when they are predicted to fail. This contributes to client/server block placement desynchronization and reduced item-use reliability on higher latency connections. JIIMS cancels these predicted-failure interactions to ensure only meaningful item-use actions are sent during continuous use (e.g., holding interact while placing blocks or using items).
+
+- When a container screen is closed, JIIMS preserves the client's predicted item stack state for the hotbar, offhand, and armor slots, where applicable. In vanilla MCBE, inventory changes made within a container screen are predicted immediately while the screen remains open, but the corresponding player inventory slots outside the container screen don't reflect those changes until the server acknowledges them. JIIMS carries the container screen's predicted state into the player's local inventory when the screen closes, allowing the client to immediately use or otherwise interact with the updated item stacks instead of waiting for a server acknowledgement, which is especially beneficial on higher-latency connections.
+
+- JIIMS immediately clears the local player's item-use state once the item being used reaches its charged state, such as when a crossbow finishes charging. In vanilla MCBE, the client may continue treating the item as actively being used until the server acknowledges the completed use state, causing the charging/charged animation and related item-use state to repeat or persist unnecessarily. JIIMS ends the client use state as soon as the charged item is detected, making charged-item use feel more responsive, particularly on higher-latency connections.
 
 - The client's latency-sensitive local actor states now ignore stale server-initiated metadata corrections. This includes sneaking, sprinting, item use, gliding, spin attack, swimming, and crawling. When the server sends actor flag updates for the local player, JIIMS preserves the client's currently predicted values for these states instead of allowing the server to overwrite them with potentially delayed data. This reduces visible twitching and interruption on high latency connections, such as sprint/sneak jitter, crossbow charging flicker, swimming/crawling state corrections, and other short-lived state desynchronizations. Note: these states are preserved only for local client continuity; the server remains authoritative over whether the corresponding gameplay action is accepted.
 
@@ -165,38 +221,9 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 - The cursor position is reinitialized when the cursor is released and becomes visible. In vanilla MCBE, the cursor position may remain stale until the mouse is moved again, which can cause UI interactions to use an outdated cursor location. Reinitializing the mouse position ensures UI interactions use the correct cursor location immediately.
 
 ---
-
-#### Performance Improvements
-
-VT is already optimized for minimal overhead. There are a few built-in zero-cost optimizations to offset any performance penalties one might incur when using this mod. Additionally, several configurable features documented below can be used to further reduce rendering or processing overhead. In practice, overall performance is approximately unchanged by default, with variation depending on hardware and configuration.
-
----
----
-
-### Syntax Legend
-
-The `Allowed values` field uses set and interval notation:
-
-- `{...}` = a finite set of explicitly allowed values, e.g. `{0, 1, 2}`
-- `[a, b]` = a closed interval; both endpoints are included
-- `(a, b)` = an open interval; both endpoints are excluded
-- `[a, b)` / `(a, b]` = a half-open interval; only one endpoint is included
-
-Server addresses use the `<address>:<port>` format. The `address` may be a DNS hostname or a numeric IP address, and `port` must be a value in the range `[0, 65535]`.
-
-The `*` symbol may be used as a port wildcard, meaning "all ports for this address."
-
-Examples:
-- `127.0.0.1:3000`
-- `play.example1.net:19132`
-- `geo.server.com:*`
-
----
 ---
 
 ### Configurable Features
-
----
 
 #### `always_show_paper_doll`
 - Type: `bool`
@@ -235,7 +262,7 @@ Examples:
 
 #### `client_side_container_opening`
 - Type: `object`
-- Opens configured container screens client-side without waiting for the server to acknowledgement. This makes opening supported containers effectively instant, instead of dependent on ping. Compatibility is server-dependent because the client must be able to predict the protocol-level information that the server expects before receiving its acknowledgement.
+- Opens configured container screens client-side without waiting for server acknowledgement. This makes opening supported containers effectively instant, instead of dependent on ping. Compatibility is server-dependent because the client must be able to predict the protocol-level information that the server expects before receiving its acknowledgement.
 - Fields:
 	- `enabled`
 		- Type: `bool`
@@ -293,7 +320,11 @@ Examples:
 	- `disable_serverside_entity_culling`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- CubeCraft uses a server-side entity culling system to hide entities that it believes are out of a player's view. This system is only active when the server has acknowledged the player is in first-person perspective. In practice, it can cause visual artifacts such as entities popping in/out due to latency, appearing late, or remaining invisible.
+		- Disables CubeCraft's perspective-based server-side entity culling. CubeCraft uses both distance-based and perspective-based culling to avoid sending entities that the server believes should not currently be visible to the player. This option only affects the perspective-based system and does not disable distance-based culling. Perspective-based culling is used while the server believes the player is in first-person perspective, and hides entities that it determines are outside the player's field of view. Because this visibility decision is made server-side, latency or stale perspective/view information can cause entities to pop in/out, appear late, or remain invisible even when they should be visible on the client.
+	- `network_stack_latency_batch_interval_ms`
+		- Type: `int`
+		- Allowed values: [`0`, `100`]
+		- Sets the batching interval, in milliseconds, for responses to network latency requests sent by the server. Some servers send these packets at very high frequencies to measure end-to-end latency through the network and software stack, and the client is expected to echo each packet back. Instead of echoing each request immediately, this option queues the responses and releases them together at the configured interval, allowing multiple responses to be combined into the same outgoing network batch. A value of `0` disables this behavior and leaves the normal response timing unchanged. CubeCraft currently appears to have a congestion-control issue when these packets are sent and echoed at extremely short intervals, which can cause ping to spike into the thousands of milliseconds. Batching the responses substantially reduces the rate of individual network transmissions and improves effective throughput, avoiding these extreme latency spikes **without delaying normal gameplay packets**. Higher values allow more responses to accumulate into each batch, maximizing throughput and reducing the likelihood of triggering this issue; consequently, a maximum value of `100` milliseconds provides the strongest mitigation. Use at your own risk: delaying these responses changes the server's measurement of client/network-stack latency and may affect anti-cheat heuristics that rely on it. Higher values also introduce greater distortion into the server's latency measurements. On CubeCraft, this may currently cause reach or velocity flags, although these flags do not appear to result in automatic bans at the time of writing.
 
 ---
 
@@ -1298,7 +1329,7 @@ Examples:
 	- `cape_file_name`
 		- Type: `string`
 		- Allowed values: *any valid `.png` file name*
-		- Specifies the file name of the cape texture to load from the `.\skin_assets\` folder relative to the mod directory. Supported texture dimensions: `64x32` pixels. Example: `my_cape.png`.
+		- Specifies the file name of the cape texture to load from the `.\skin_assets\` folder relative to the mod directory. The standard supported texture dimension is `64x32`. Higher-resolution `2:1` textures are also accepted, including `128x64`, `256x128`, `512x256`, `1024x512`, and `2048x1024`, although these extended dimensions may not be accepted by all servers. Example: `my_cape.png`.
 	- `is_slim_arm`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -1318,7 +1349,7 @@ Examples:
 	- `skin_file_name`
 		- Type: `string`
 		- Allowed values: *any valid `.png` file name*
-		- Specifies the file name of the skin texture to load from the `.\skin_assets\` folder relative to the mod directory. Supported texture dimensions: `64x32`, `64x64`, or `128x128` pixels. Example: `my_skin.png`.
+		- Specifies the file name of the skin texture to load from the `.\skin_assets\` folder relative to the mod directory. Standard supported texture dimensions are `64x32`, `64x64`, and `128x128`. Higher-resolution square textures are also accepted, including `256x256`, `512x512`, `1024x1024`, and `2048x2048`, although these extended dimensions may not be accepted by all servers. Example: `my_skin.png`.
 
 ---
 
