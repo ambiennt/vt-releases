@@ -1,5 +1,5 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.18.0-rc.1`<br>
+As-of version: `1.18.0-rc.2`<br>
 Last updated: `August 8, 2026`<br>
 
 ---
