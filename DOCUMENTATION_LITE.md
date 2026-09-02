@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.18.0-rc.2`<br>
-Last updated: `August 8, 2026`<br>
+As-of version: `1.18.1-beta`<br>
+Last updated: `September 2, 2026`<br>
 
 ---
 ---
@@ -36,6 +36,8 @@ For simplicity, and to keep development focused on core features, VT does not pr
 
 This directory can be opened by entering the path above into the Windows `Run` dialog. The mod directory and its root `config.json` file are created automatically upon injection if they do not already exist. The active `config.json` is loaded when VT is injected and can be reloaded at runtime using the in-game `.config reload` command.
 
+Unless otherwise stated, all relative paths shown in this documentation (e.g., `.\fonts\`) are relative to the mod directory.
+
 ---
 ---
 
@@ -65,12 +67,13 @@ requires one of `start`, `stop`, or `status`. The `start` value additionally acc
 
 #### Allowed Values
 
-The `Allowed values` field uses set and interval notation:
+The `Allowed values` field uses set, interval, and descriptive notation:
 
 - `{...}` = a finite set of explicitly allowed values, e.g. `{0, 1, 2}`
 - `[a, b]` = a closed interval; both endpoints are included
 - `(a, b)` = an open interval; both endpoints are excluded
 - `[a, b)` / `(a, b]` = a half-open interval; only one endpoint is included
+- *description* = an open-ended or context-dependent domain that cannot be enumerated, e.g. *any namespaced item identifier*
 
 #### Server Addresses
 
@@ -111,6 +114,7 @@ Example usage:
 - `.config copy`
 - `.config reload`
 - `.config paste`
+- `.cfg reload`
 
 ---
 
@@ -132,6 +136,7 @@ Example usage:
 - `.customchat disable`
 - `.customchat connect`
 - `.customchat disconnect`
+- `.cc enable`
 
 ---
 
@@ -173,6 +178,7 @@ Describes various network statistics, such as ping and total throughput. Aliases
 
 Example usage:
 - `.netstat true`
+- `.ping`
 
 ---
 
@@ -185,7 +191,7 @@ Example usage:
 ---
 
 #### `stealskin <player-name: string> [fetch-from-world: bool = false]`
-Steals a player's skin, cape, and geometry data. Player name lookups are case insensitive. `fetch-from-world` retrieves the skin data from the target player in the world instead of from the pause menu's player list. Prefer this option if no skin data is available from the player list, or if the skin retrieved from the player list differs from the player's current in-world skin. Retrieved skin files are outputted to the `.\stolen_skin_assets\` folder relative to the mod directory.
+Steals a player's skin, cape, and geometry data. Player name lookups are case insensitive. `fetch-from-world` retrieves the skin data from the target player in the world instead of from the pause menu's player list. Prefer this option if no skin data is available from the player list, or if the skin retrieved from the player list differs from the player's current in-world skin. Retrieved files are written to the `.\stolen_skin_assets\` folder. This folder is created automatically when needed.
 
 Example usage:
 - `.stealskin username123`
@@ -224,13 +230,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 ---
 
 ### Configurable Features
-
-#### `always_show_paper_doll`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Forces the paper doll to remain visible, provided that the vanilla `Hide Paper Doll` setting is disabled. In vanilla MCBE, the paper doll may appear only under certain conditions, such as while sneaking or for 1 second after the player stops sneaking; this feature bypasses those temporary visibility rules.
-
----
 
 #### `attack_while_using_item_anim`
 - Type: `bool`
@@ -271,11 +270,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `server_whitelist`
 		- Type: `array` of `string`
 		- Allowed values: *any server address*
-		- Specifies the server addresses on which client-side container opening is enabled when `use_server_whitelist` is enabled.
+		- Specifies the server addresses on which client-side container opening is enabled when `client_side_container_opening.use_server_whitelist` is enabled.
 	- `use_server_whitelist`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Restricts client-side container opening to the server addresses specified by `server_whitelist`. When disabled, client-side container opening may be used on any server.
+		- Restricts client-side container opening to the server addresses specified by `client_side_container_opening.server_whitelist`. When disabled, client-side container opening may be used on any server.
 	- `containers`
 		- Type: `object`
 		- Configures client-side opening for individual container types.
@@ -311,7 +310,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 #### `cubecraft_tweaks`
 - Type: `object`
-- Various tweaks to improve the user experience on CubeCraft.
+- Various tweaks to improve the user experience on CubeCraft. This feature is only applied while connected to a server matching one of the addresses configured in `cubecraft_servers`.
 - Fields:
 	- `enabled`
 		- Type: `bool`
@@ -324,7 +323,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `network_stack_latency_batch_interval_ms`
 		- Type: `int`
 		- Allowed values: [`0`, `100`]
-		- Sets the batching interval, in milliseconds, for responses to network latency requests sent by the server. Some servers send these packets at very high frequencies to measure end-to-end latency through the network and software stack, and the client is expected to echo each packet back. Instead of echoing each request immediately, this option queues the responses and releases them together at the configured interval, allowing multiple responses to be combined into the same outgoing network batch. A value of `0` disables this behavior and leaves the normal response timing unchanged. CubeCraft currently appears to have a congestion-control issue when these packets are sent and echoed at extremely short intervals, which can cause ping to spike into the thousands of milliseconds. Batching the responses substantially reduces the rate of individual network transmissions and improves effective throughput, avoiding these extreme latency spikes **without delaying normal gameplay packets**. Higher values allow more responses to accumulate into each batch, maximizing throughput and reducing the likelihood of triggering this issue; consequently, a maximum value of `100` milliseconds provides the strongest mitigation. Use at your own risk: delaying these responses changes the server's measurement of client/network-stack latency and may affect anti-cheat heuristics that rely on it. Higher values also introduce greater distortion into the server's latency measurements. On CubeCraft, this may currently cause reach or velocity flags, although these flags do not appear to result in automatic bans at the time of writing.
+		- Sets the batching interval, in milliseconds, for responses to network latency requests sent by the server. Some servers send these packets at very high frequencies and expect the client to echo each one back. Instead of responding immediately, this option queues the responses and releases them together at the configured interval, allowing multiple responses to be combined into the same outgoing network batch. A value of `0` disables this behavior and leaves the normal response timing unchanged. CubeCraft currently appears to have a congestion-control issue that can cause ping to spike into the thousands of milliseconds when these packets are exchanged at extremely short intervals. Batching them reduces the number of individual network transmissions and avoids these extreme latency spikes **without delaying normal gameplay packets**. Higher values provide stronger mitigation by allowing more responses to accumulate per batch, with `100` milliseconds providing the maximum effect. Use at your own risk: this changes the server's measurement of client/network-stack latency and may affect anti-cheat heuristics that rely on it. On CubeCraft, higher values may currently cause reach or velocity flags, although these flags do not appear to result in automatic bans at the time of writing.
 
 ---
 
@@ -355,11 +354,26 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `use_route_custom_to_vanilla_prefix`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Toggles the `route_custom_to_vanilla_prefix` behavior.
+		- Toggles the `custom_chat.route_custom_to_vanilla_prefix` behavior.
 	- `use_route_vanilla_to_custom_prefix`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Toggles the `route_vanilla_to_custom_prefix` behavior.
+		- Toggles the `custom_chat.route_vanilla_to_custom_prefix` behavior.
+
+---
+
+#### `custom_font`
+- Type: `object`
+- Loads a user-provided TrueType or OpenType font from the `.\fonts\` folder and uses it for text rendered by VT, such as its custom displays and editor widgets. This does not change the font used by Minecraft's native UI. When enabled, this folder is created automatically if it does not already exist.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `file_name`
+		- Type: `string`
+		- Allowed values: *any valid `.ttf` or `.otf` file name*
+		- Specifies the font file name within the `.\fonts\` folder. Example: `my_font.ttf`. If the value is empty, has an unsupported extension, or refers to a file that cannot be read or parsed as a font, no custom font is loaded and VT continues using its built-in Segoe UI font.
 
 ---
 
@@ -382,6 +396,21 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ---
 
+#### `disable_block_waterlogging`
+- Type: `object`
+- Prevents the local player from waterlogging configured blocks with a water bucket. 'Waterlogging' refers to placing a water source block inside another block. When a block listed in `disable_block_waterlogging.block_whitelist` is targeted, water placement is redirected to the adjacent position on the selected face. The interaction is blocked if that position cannot directly receive water or is another protected waterloggable block. Other bucket types and blocks not listed in the whitelist retain their vanilla behavior.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `block_whitelist`
+		- Type: `array` of `string`
+		- Allowed values: *any namespaced block identifier*
+		- Contains the block identifiers for which waterlogging is disabled. Entries that are not waterloggable have no effect. The default list contains `minecraft:web`. Preventing cobweb waterlogging allows water to break the cobweb instead of leaving it intact, and avoids server/client desyncs on servers such as CubeCraft that reject cobweb waterlogging transactions.
+
+---
+
 #### `disable_breathing_bob`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
@@ -393,21 +422,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 - Type: `bool`
 - Allowed values: {`true`, `false`}
 - Disables the hardcoded `Control` + `B` hotkey to toggle the vanilla `Text To Speech For Chat` setting.
-
----
-
-#### `disable_cobweb_waterlogging`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Prevents water buckets from waterlogging cobwebs client-side. 'Waterlogging' refers to placing a water source block inside another block. This feature is useful when the intended action is to break a cobweb with water, since a waterlogged cobweb remains intact. It also avoids server/client desyncs on servers such as CubeCraft, where cobweb waterlogging transactions are rejected and cause incorrect bucket state or ghost water blocks.
-
----
-
-#### `disable_flying_inventory_item_anim`
-
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Disables the 'flying item' animation when item stacks are moved between container slots, such as when shift-clicking an item stack or using an inventory hotkey. This is a strictly visual change and does not affect how or when the item stack is moved.
 
 ---
 
@@ -488,7 +502,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `line_thickness`
 		- Type: `float`
 		- Allowed values: [`0.0`, `0.1`]
-		- Sets the thickless (in world units) for each hitbox 'line'. This setting is only applicable if `use_line_thickness` is enabled.
+		- Sets the thickless (in world units) for each hitbox 'line'. This setting is only applicable if `entity_hitboxes.use_line_thickness` is enabled.
 	- `primary_hitbox_color`
 		- Type: `RGBA HTML color`
 		- Allowed values: [`#00000000`, `#FFFFFFFF`]
@@ -508,30 +522,105 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `use_line_thickness`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Toggles the application of the `line_thickness` on hitbox rendering. When `true`, hitbox edges are rendered as quads using the thickness set by `line_thickness` (in world units). When `false`, edges are drawn as simple line strips and `line_thickness` is ignored. Thick lines are more expensive to render; turn this setting off for the more performant path if you don't need a custom thickness.
+		- Toggles the application of `entity_hitboxes.line_thickness` on hitbox rendering. When `true`, hitbox edges are rendered as quads using the thickness set by `entity_hitboxes.line_thickness` (in world units). When `false`, edges are drawn as simple line strips and `entity_hitboxes.line_thickness` is ignored. Thick lines are more expensive to render; turn this setting off for the more performant path if you don't need a custom thickness.
 
 ---
 
 #### `entity_overlay_color`
 - Type: `object`
-- Changes various context-specific overlay colors for entities.
+- Configures state-dependent overlay colors for specific entity types. Base entity models and their equipped armor can be configured independently.
 - Fields:
 	- `enabled`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Toggles the parent object.
-	- `armor_hurt_color`
-		- Type: `RGBA HTML color`
-		- Allowed values: [`#00000000`, `#FFFFFFFF`]
-		- Sets the overlay color on equipped armor when the wearing entity is taking damage.
-	- `armor_on_fire_color`
-		- Type: `RGBA HTML color`
-		- Allowed values: [`#00000000`, `#FFFFFFFF`]
-		- Sets the overlay color on equipped armor when the wearing entity is on fire, but NOT taking damage.
-	- `oscillate_armor_on_fire_color`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Sets whether the `armor_on_fire_color` should oscillate its green and alpha color channels, (in partity with vanilla MCBE), while using `armor_on_fire_color` as a base. Keep this setting `false` if you want the `armor_on_fire_color` to appear solid.
+	- `entities`
+		- Type: `object`
+		- Configures overlay overrides by namespaced entity identifier, such as `minecraft:player`. Entries may be added or removed as needed; entities without an entry use vanilla overlay behavior.
+		- Fields:
+			- `<entity identifier>`
+				- Type: `object`
+				- Presence: optional
+				- Fallback when omitted: The entity uses vanilla overlay behavior.
+				- Configures overlay overrides for the specified entity. The `base` and `armor` objects are independently optional; an empty entity config has no effect.
+				- Fields:
+					- `base`
+						- Type: `object`
+						- Presence: optional
+						- Fallback when omitted: The entity's base model uses vanilla overlay behavior. `entity_overlay_color.entities.<entity identifier>.armor` can still override armor independently.
+						- Configures the entity's base model, excluding armor. Each field is independently optional; an empty `base` object has no effect.
+						- Fields:
+							- `overlay_color`
+								- Type: `RGBA HTML color`
+								- Presence: optional
+								- Allowed values: [`#00000000`, `#FFFFFFFF`]
+								- Fallback when omitted: Uses the vanilla overlay color.
+								- Sets the overlay color used when no hurt, death, or on-fire overlay takes precedence.
+							- `hurt_color`
+								- Type: `RGBA HTML color`
+								- Presence: optional
+								- Allowed values: [`#00000000`, `#FFFFFFFF`]
+								- Fallback when omitted: Uses the vanilla hurt overlay color.
+								- Sets the overlay color used when the entity is taking damage or is in an applicable death animation.
+							- `on_fire_color`
+								- Type: `RGBA HTML color`
+								- Presence: optional
+								- Allowed values: [`#00000000`, `#FFFFFFFF`]
+								- Fallback when omitted: Uses the vanilla on-fire overlay color.
+								- Sets the base overlay color used while the entity is on fire and the hurt overlay does not take precedence.
+							- `oscillate_on_fire_color`
+								- Type: `bool`
+								- Presence: optional
+								- Allowed values: {`true`, `false`}
+								- Fallback when omitted: Uses the vanilla behavior (`true`).
+								- Sets whether the green and alpha channels of `entity_overlay_color.entities.<entity identifier>.base.on_fire_color` change over time, in parity with vanilla MCBE. Set this to `false` to keep the configured on-fire color solid.
+					- `armor`
+						- Type: `object`
+						- Presence: optional
+						- Fallback when omitted: armor uses the resolved values from `entity_overlay_color.entities.<entity identifier>.base`, or vanilla values when the corresponding `base` fields are also omitted.
+						- Configures armor equipped by the entity when rendered in the world. It supports the same optional fields and state behavior as `entity_overlay_color.entities.<entity identifier>.base`. Each supplied field overrides the corresponding resolved `base` value; omitted fields inherit from `base`, then fall back to vanilla values. An empty `armor` object has no additional effect.
+						- Fields:
+							- `overlay_color`
+								- Type: `RGBA HTML color`
+								- Presence: optional
+								- Allowed values: [`#00000000`, `#FFFFFFFF`]
+								- Same as `entity_overlay_color.entities.<entity identifier>.base.overlay_color`, but applies to armor.
+							- `hurt_color`
+								- Type: `RGBA HTML color`
+								- Presence: optional
+								- Allowed values: [`#00000000`, `#FFFFFFFF`]
+								- Same as `entity_overlay_color.entities.<entity identifier>.base.hurt_color`, but applies to armor.
+							- `on_fire_color`
+								- Type: `RGBA HTML color`
+								- Presence: optional
+								- Allowed values: [`#00000000`, `#FFFFFFFF`]
+								- Same as `entity_overlay_color.entities.<entity identifier>.base.on_fire_color`, but applies to armor.
+							- `oscillate_on_fire_color`
+								- Type: `bool`
+								- Presence: optional
+								- Allowed values: {`true`, `false`}
+								- Same as `entity_overlay_color.entities.<entity identifier>.base.oscillate_on_fire_color`, but applies to armor.
+	- Below is an example config that changes the player's hurt overlay, lets armor inherit that color, and gives armor a separate solid on-fire color:
+	```json
+	{
+		// ...
+		"entity_overlay_color": {
+			"enabled": true,
+			"entities": {
+				"minecraft:player": {
+					"base": {
+						"hurt_color": "#00FFFF99"
+					},
+					"armor": {
+						"on_fire_color": "#FF8000B3",
+						"oscillate_on_fire_color": false
+					}
+				}
+			}
+		}
+		// ...
+	}
+	```
 
 ---
 
@@ -558,7 +647,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `show_debug_editor`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Shows an in-game editor UI for adjusting the `translation`, `rotation`, and `scale` values at runtime. This is intended for debugging and tuning transform values.
+		- Shows an in-game editor UI for adjusting the `first_person_model_matrix.translation`, `first_person_model_matrix.rotation`, and `first_person_model_matrix.scale` values at runtime. This is intended for debugging and tuning transform values.
 
 ---
 
@@ -640,7 +729,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 #### `freelook`
 - Type: `object`
-- Detaches the camera orbit from the local player's look direction. When `enabled` is `true`, holding down the configured `key` activates this feature.
+- Detaches the camera orbit from the local player's look direction. When `freelook.enabled` is `true`, holding down the configured `freelook.key` activates this feature.
 - Fields:
 	- `enabled`
 		- Type: `bool`
@@ -653,11 +742,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `change_perspective`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- When `true`, the camera perspective switches to `perspective` while active, and restores the original perspective when deactivated.
+		- When `true`, the camera perspective switches to `freelook.perspective` while active, and restores the original perspective when deactivated.
 	- `perspective`
 		- Type: `int`
 		- Allowed values: see [Camera Perspectives](#camera-perspectives) for a list of enumerated values.
-		- Selects which camera perspective will be used when `change_perspective` is `true`.
+		- Selects which camera perspective will be used when `freelook.change_perspective` is `true`.
 
 ---
 
@@ -695,11 +784,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `drop_hovered_stack_key`
 		- Type: `int`
 		- Allowed values: see [Key Codes](#key-codes) for a list of enumerated values.
-		- The key code used to drop the entire hovered item stack while in a container screen. This is also beneficial for the same reasons as `drop_hotbar_selected_stack_key`.
+		- The key code used to drop the entire hovered item stack while in a container screen. This is also beneficial for the same reasons as `inventory_hotkeys.drop_hotbar_selected_stack_key`.
 	- `flying_inventory_item_anim`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Toggles the 'flying item' animation when an item stack is being swapped. This is the same animation that plays in vanilla MCBE when an item stack is shift-clicked into another slot. Disabling this animation means that the swap appears 'instant'. This setting has no effect while the `disable_flying_inventory_item_anim` feature is enabled.
+		- Toggles the 'flying item' animation when an item stack is being swapped. This is the same animation that plays in vanilla MCBE when an item stack is shift-clicked into another slot. Disabling this animation means that the swap appears 'instant'. This setting has no effect while `ui_options.disable_flying_inventory_item_anim` is enabled.
 
 ---
 
@@ -733,11 +822,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 			- `screen_anchor_offset`
 				- Type: `vec2`
 				- Allowed values: *unbounded*
-				- Adjusts the position of the armor display relative to the chosen `screen_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
+				- Adjusts the position of the armor display relative to the chosen `item_display.armor.screen_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
 			- `content_anchor`
 				- Type: `int`
 				- Allowed values: see [Anchor Points](#anchor-points) for a list of enumerated values.
-				- Defines which anchor point on the armor display's bounding box is aligned to `screen_anchor`.
+				- Defines which anchor point on the armor display's bounding box is aligned to `item_display.armor.screen_anchor`.
 			- `render_outside_hud`
 				- Type: `bool`
 				- Allowed values: {`true`, `false`}
@@ -781,11 +870,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 							- `text_anchor`
 								- Type: `int`
 								- Allowed values: see [Anchor Points](#anchor-points) for a list of enumerated values.
-								- Defines which anchor point on the durability text's bounding box is aligned to `item_anchor`.
+								- Defines which anchor point on the durability text's bounding box is aligned to `item_display.armor.durability.text.item_anchor`.
 							- `offset`
 								- Type: `vec2`
 								- Allowed values: *unbounded*
-								- Adjusts the position of the durability text relative to the chosen `item_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
+								- Adjusts the position of the durability text relative to the chosen `item_display.armor.durability.text.item_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
 							- `size`
 								- Type: `float`
 								- Allowed values: [`0.0`, `+∞`)
@@ -797,7 +886,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 							- `low_color`
 							  - Type: `RGBA HTML color`
 							  - Allowed values: [`#00000000`, `#FFFFFFFF`]
-							  - Sets the durability text color used at 0% durability. The final text color is interpolated between `low_color` and `high_color` by durability percentage, using HSV hue interpolation.
+							  - Sets the durability text color used at 0% durability. The final text color is interpolated between `item_display.armor.durability.text.low_color` and `item_display.armor.durability.text.high_color` by durability percentage, using HSV hue interpolation.
 						  - `high_color`
 							  - Type: `RGBA HTML color`
 							  - Allowed values: [`#00000000`, `#FFFFFFFF`]
@@ -809,11 +898,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 							- `shadow_offset`
 								- Type: `vec2`
 								- Allowed values: *unbounded*
-								- Sets the offset of the durability text shadow relative to the text positioning. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up. This setting is only applicable if `shadow` is enabled.
+								- Sets the offset of the durability text shadow relative to the text positioning. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up. This setting is only applicable if `item_display.armor.durability.text.shadow` is enabled.
 							- `shadow_color`
 								- Type: `RGBA HTML color`
 								- Allowed values: [`#00000000`, `#FFFFFFFF`]
-								- Sets the color for the durability text shadow. This setting is only applicable if `shadow` is enabled.
+								- Sets the color for the durability text shadow. This setting is only applicable if `item_display.armor.durability.text.shadow` is enabled.
 					- `bar`
 						- Type: `object`
 						- Controls the armor durability bar.
@@ -829,11 +918,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 							- `bar_anchor`
 								- Type: `int`
 								- Allowed values: see [Anchor Points](#anchor-points) for a list of enumerated values.
-								- Defines which anchor point on the durability bar's bounding box is aligned to `item_anchor`.
+								- Defines which anchor point on the durability bar's bounding box is aligned to `item_display.armor.durability.bar.item_anchor`.
 							- `offset`
 								- Type: `vec2`
 								- Allowed values: *unbounded*
-								- Adjusts the position of the durability bar relative to the chosen `item_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
+								- Adjusts the position of the durability bar relative to the chosen `item_display.armor.durability.bar.item_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
 							- `size`
 								- Type: `vec2`
 								- Allowed values: [`0.0`, `+∞`) for each component
@@ -846,14 +935,14 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 								- Type: `RGBA HTML color`
 								- Allowed values: [`#00000000`, `#FFFFFFFF`]
 								- Sets the color for the durability bar background.
-						  - `low_color`
-						  	- Type: `RGBA HTML color`
-						  	- Allowed values: [`#00000000`, `#FFFFFFFF`]
-						  	- Sets the durability bar color used at 0% durability. The final bar color is interpolated between `low_color` and `high_color` by durability percentage, using HSV hue interpolation.
-						  - `high_color`
-						  	- Type: `RGBA HTML color`
-						  	- Allowed values: [`#00000000`, `#FFFFFFFF`]
-						  	- Sets the durability bar color used at 100% durability.
+						  	- `low_color`
+						  		- Type: `RGBA HTML color`
+						  		- Allowed values: [`#00000000`, `#FFFFFFFF`]
+						  		- Sets the durability bar color used at 0% durability. The final bar color is interpolated between `item_display.armor.durability.bar.low_color` and `item_display.armor.durability.bar.high_color` by durability percentage, using HSV hue interpolation.
+						  	- `high_color`
+						  		- Type: `RGBA HTML color`
+						  		- Allowed values: [`#00000000`, `#FFFFFFFF`]
+						  		- Sets the durability bar color used at 100% durability.
 
 ---
 
@@ -867,14 +956,14 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 #### `java_first_person_bow_anim`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
-- Enables a custom reimplementation of the MCJE 1.7 first-person bow animation. This replaces the default JSON-based bow attachable (in both first and third-person). When enabled, it also allows `enchant_glint_color`'s `smooth_world_uv` feature to apply to bows.
+- Enables a custom reimplementation of the MCJE 1.7 first-person bow animation. This replaces the default JSON-based bow attachable (in both first and third-person). When enabled, it also allows `enchant_glint_color.smooth_world_uv` to apply to bows.
 
 ---
 
 #### `java_first_person_crossbow_anim`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
-- Enables a custom reimplementation of the MCJE 1.14+ first-person crossbow animation. This replaces the default JSON-based crossbow attachable (in both first and third-person). When enabled, it also allows `enchant_glint_color`'s `smooth_world_uv` feature to apply to crossbows.
+- Enables a custom reimplementation of the MCJE 1.14+ first-person crossbow animation. This replaces the default JSON-based crossbow attachable (in both first and third-person). When enabled, it also allows `enchant_glint_color.smooth_world_uv` to apply to crossbows.
 
 ---
 
@@ -955,11 +1044,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `night_vision`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Toggles whether the `night_vision_scale` setting applies.
+		- Toggles whether the `lighting_options.night_vision_scale` setting applies.
 	- `night_vision_scale`
 		- Type: `bool`
 		- Allowed values: [`0.0`, `1.0`]
-		- The normalized scale by which the terrain texture should apply the visibility boost used by the night vision effect. This differs from the `brightness` setting in that it more closely respects the shading of the current environment.
+		- The normalized scale by which the terrain texture should apply the visibility boost used by the night vision effect. This differs from the `lighting_options.brightness` setting in that it more closely respects the shading of the current environment.
 	- `overworld_sunrise_color`
 		- Type: `RGBA HTML color`
 		- Allowed values: [`#00000000`, `#FFFFFFFF`]
@@ -984,6 +1073,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
     	- Toggles the parent object.
 	- `sound_identifier`
     	- Type: `string`
+		- Allowed values: *any sound event identifier defined by an active resource pack*
     	- Sets the sound to play when a mention is detected. This should be the name of a sound event defined in `.\sounds\sound_definitions.json` of an active resource pack (such as the vanilla one). The same sound identifier can also be tested via the vanilla `/playsound` command.
 	- `volume`
     	- Type: `float`
@@ -998,8 +1088,9 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
     	- Allowed values: {`true`, `false`}
     	- When `true`, the player's display name only triggers the sound when mentioned with an `@` prefix, such as `@username`. When `false`, the player's display name may also trigger the sound as a standalone space-delimited word.
 	- `additional_triggers`
-    	- Type: `array` of non-empty `string`
-    	- Adds extra case-insensitive mention triggers. Each trigger matches as a standalone space-delimited word. Empty triggers are ignored.
+		- Type: `array` of `string`
+		- Allowed values: *any non-empty string*
+		- Adds extra case-insensitive mention triggers. Each trigger matches as a standalone space-delimited word. Empty triggers are ignored.
 
 ---
 
@@ -1069,7 +1160,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `text_darken_color`
 		- Type: `RGBA HTML color`
 		- Allowed values: [`#00000000`, `#FFFFFFFF`]
-		- Sets the color for the darkened name tag text. The same preconditions as `text_color` apply for this setting.
+		- Sets the color for the darkened name tag text. The same preconditions as `name_tag_options.text_color` apply for this setting.
 	- `text_shadow`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -1077,15 +1168,15 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `text_shadow_color`
 		- Type: `RGBA HTML color`
 		- Allowed values: [`#00000000`, `#FFFFFFFF`]
-		- Sets the color for the text shadow. This color is always applied, regardless of color format specifiers (e.g. `§a`). This setting is only applicable if `text_shadow` is enabled.
+		- Sets the color for the text shadow. This color is always applied, regardless of color format specifiers (e.g. `§a`). This setting is only applicable if `name_tag_options.text_shadow` is enabled.
 	- `text_shadow_darken_color`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Sets the color for the text shadow when the name tag is darkened. This color is always applied, regardless of color format specifiers (e.g. `§a`). This setting is only applicable if `text_shadow` is enabled.
+		- Sets the color for the text shadow when the name tag is darkened. This color is always applied, regardless of color format specifiers (e.g. `§a`). This setting is only applicable if `name_tag_options.text_shadow` is enabled.
 	- `text_shadow_offset`
 		- Type: `vec2`
 		- Allowed values: *unbounded*
-		- Offsets the text shadow relative to the text positioning. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up. This setting is only applicable if `text_shadow` is enabled.
+		- Offsets the text shadow relative to the text positioning. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up. This setting is only applicable if `name_tag_options.text_shadow` is enabled.
 	- `world_pos_offset_y`
 		- Type: `float`
 		- Allowed values: *unbounded*
@@ -1104,11 +1195,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `scale_to_window_size_x`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Scales the in-game sensitivity in linear proportion to the x dimension of the MCBE window size. The 'default' window size is fullscreen, i.e. the monitor size. For example, if you have both `scale_to_window_size_x` and `scale_to_window_size_y` enabled, and are playing on a 1920 x 1080 monitor, shrinking your window dimensions to 1920/2 x 1080/2 = 960 x 540 will halve your in-game sensitivity.
+		- Scales the in-game sensitivity in linear proportion to the x dimension of the MCBE window size. The 'default' window size is fullscreen, i.e. the monitor size. For example, if you have both `override_game_sensitivity.scale_to_window_size_x` and `override_game_sensitivity.scale_to_window_size_y` enabled, and are playing on a 1920 x 1080 monitor, shrinking your window dimensions to 1920/2 x 1080/2 = 960 x 540 will halve your in-game sensitivity.
 	- `scale_to_window_size_y`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Scales the in-game sensitivity in linear proportion to the y dimension of the MCBE window size. The same logic as `scale_to_window_size_x` applies, but for the y dimension.
+		- Scales the in-game sensitivity in linear proportion to the y dimension of the MCBE window size. The same logic as `override_game_sensitivity.scale_to_window_size_x` applies, but for the y dimension.
 	- `value`
 		- Type: `float`
 		- Allowed values: *unbounded*
@@ -1131,27 +1222,33 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `base_emitter_block_render_distance`
 		- Type: `int`
 		- Allowed values: [`0`, `4294967295`]
-		- Sets the default maximum render distance, in blocks, between the camera and a particle emitter's world position. This value is used for particles that do not define a per-particle `emitter_block_render_distance`.
+		- Sets the default maximum render distance, in blocks, between the camera and a particle emitter's world position. This value is used for particles that do not define `particle_options.particles.<particle identifier>.emitter_block_render_distance`.
 	- `disable_all_rendering`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Disables all particle rendering. When enabled, this setting overrides all entries in `particles`.
+		- Disables all particle rendering. When enabled, this setting overrides all entries in `particle_options.particles`.
 	- `particles`
 		- Type: `object`
 		- Configures rendering overrides for individual particle identifiers. Entries may be added or removed as needed; particles without an entry use the settings inherited from the parent object. Particle identifiers can be found in the particle JSON files within the `.\particles\` folder of the an active resource pack (such as the vanilla one). Most particles can be previewed with the vanilla `/particle` command, although some require context-dependent data that the command does not provide.
 		- Fields:
 			- `<particle identifier>`
 				- Type: `object`
-				- Configures rendering overrides for the specified particle. Both fields are optional; omitted fields use their respective fallback behavior.
+				- Presence: optional
+				- Fallback when omitted: Subject to `particle_options.disable_all_rendering`, the particle uses `particle_options.base_emitter_block_render_distance` and is not individually disabled.
+				- Configures rendering overrides for the specified particle. Its two fields are independently optional; an empty override object has no effect.
 				- Fields:
 					- `emitter_block_render_distance`
 						- Type: `int`
+						- Presence: optional
 						- Allowed values: [`0`, `4294967295`]
-						- Overrides `base_emitter_block_render_distance` for this particle. When omitted, `base_emitter_block_render_distance` is used.
+						- Fallback when omitted: Uses `particle_options.base_emitter_block_render_distance`.
+						- Overrides `particle_options.base_emitter_block_render_distance` for this particle.
 					- `disable_rendering`
 						- Type: `bool`
+						- Presence: optional
 						- Allowed values: {`true`, `false`}
-						- Disables rendering for this particle. When omitted, rendering is not individually disabled.
+						- Fallback when omitted: `false`.
+						- Disables rendering for this particle.
 	- Below is an example config that limits critical-hit particles and block destruction particles to 32 blocks, while completely disabling the mob spell particle:
 	```json
 	{
@@ -1245,11 +1342,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Disables frame vertical synchronization (vsync) at the graphics backend level. This feature is useful if you are on a device in which the following do not work to disable vsync:
 			- Setting the internal vanilla `gfx_vsync` option to `0`, i.e. `gfx_vsync:0` in `%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\minecraftpe\options.txt`
 			- Disabling vsync for `Minecraft.Windows.exe` in your graphics card control panel
-	- `render_primary_ui_only`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Renders only the primary UI layer, skipping auxiliary layers (such as toast notifications and the debug overlay). This may slightly improve performance by avoiding additional UI passes.
-
 ---
 
 #### `saturation_display`
@@ -1275,11 +1367,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `screen_anchor_offset`
 		- Type: `vec2`
 		- Allowed values: *unbounded*
-		- Adjusts the position of the display relative to the chosen `screen_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
+		- Adjusts the position of the display relative to the chosen `saturation_display.screen_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
 	- `content_anchor`
 		- Type: `int`
 		- Allowed values: see [Anchor Points](#anchor-points) for a list of enumerated values.
-		- Defines which anchor point on the display's bounding box is aligned to `screen_anchor`. By default, the display is rendered from its top-left corner.
+		- Defines which anchor point on the display's bounding box is aligned to `saturation_display.screen_anchor`. By default, the display is rendered from its top-left corner.
 	- `text_color`
 		- Type: `RGBA HTML color`
 		- Allowed values: [`#00000000`, `#FFFFFFFF`]
@@ -1291,11 +1383,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `text_shadow_color`
 		- Type: `RGBA HTML color`
 		- Allowed values: [`#00000000`, `#FFFFFFFF`]
-		- Sets the color for the text shadow. This setting is only applicable if `text_shadow` is enabled.
+		- Sets the color for the text shadow. This setting is only applicable if `saturation_display.text_shadow` is enabled.
 	- `text_shadow_offset`
 		- Type: `vec2`
 		- Allowed values: *unbounded*
-		- Sets offset of the text shadow relative to the text positioning. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up. This setting is only applicable if `text_shadow` is enabled.
+		- Sets offset of the text shadow relative to the text positioning. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up. This setting is only applicable if `saturation_display.text_shadow` is enabled.
 	- `text_size`
 		- Type: `float`
 		- Allowed values: [`0.0`, `+∞`)
@@ -1314,13 +1406,13 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 - Type: `bool`
 - Allowed values: {`true`, `false`}
-- Allows custom `*.material.bin` shader material files to be loaded from the `.\shader_materials\` folder relative to the mod directory. Files placed in this folder override the corresponding shader materials loaded by MCBE.
+- Loads custom `*.material.bin` shader material files from the `.\shader_materials\` folder. When enabled, this folder is created automatically if it does not already exist. Files in this folder override the corresponding shader materials loaded by MCBE.
 
 ---
 
 #### `skin_sideloader`
 - Type: `object`
-- Loads a custom player skin and optional cape directly from disk upon joining a server, bypassing the in-game skin menu. This can help resolve issues where skins fail to load or sync through the vanilla skin system. Skin and cape files are expected to be located in the `.\skin_assets\` folder relative to the mod directory.
+- Loads a custom player skin and optional cape from the `.\skin_assets\` folder upon joining a server, bypassing the vanilla skin menu. When enabled, this folder is created automatically if it does not already exist. This can help resolve issues where skins fail to load or sync through the vanilla skin system.
 - Fields:
 	- `enabled`
 		- Type: `bool`
@@ -1329,7 +1421,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `cape_file_name`
 		- Type: `string`
 		- Allowed values: *any valid `.png` file name*
-		- Specifies the file name of the cape texture to load from the `.\skin_assets\` folder relative to the mod directory. The standard supported texture dimension is `64x32`. Higher-resolution `2:1` textures are also accepted, including `128x64`, `256x128`, `512x256`, `1024x512`, and `2048x1024`, although these extended dimensions may not be accepted by all servers. Example: `my_cape.png`.
+		- Specifies the cape texture file name within the `.\skin_assets\` folder. The standard supported texture dimension is `64x32`. Higher-resolution `2:1` textures are also accepted, including `128x64`, `256x128`, `512x256`, `1024x512`, and `2048x1024`, although these extended dimensions may not be accepted by all servers. Example: `my_cape.png`.
 	- `is_slim_arm`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -1349,7 +1441,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `skin_file_name`
 		- Type: `string`
 		- Allowed values: *any valid `.png` file name*
-		- Specifies the file name of the skin texture to load from the `.\skin_assets\` folder relative to the mod directory. Standard supported texture dimensions are `64x32`, `64x64`, and `128x128`. Higher-resolution square textures are also accepted, including `256x256`, `512x512`, `1024x1024`, and `2048x2048`, although these extended dimensions may not be accepted by all servers. Example: `my_skin.png`.
+		- Specifies the skin texture file name within the `.\skin_assets\` folder. Standard supported texture dimensions are `64x32`, `64x64`, and `128x128`. Higher-resolution square textures are also accepted, including `256x256`, `512x512`, `1024x1024`, and `2048x2048`, although these extended dimensions may not be accepted by all servers. Example: `my_skin.png`.
 
 ---
 
@@ -1372,7 +1464,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `overworld_is_brightness_dependent`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- When enabled, the `overworld` sky color is modulated by the time of day: darker at night, brighter during the day. This matches vanilla behavior.
+		- When enabled, `sky_color.overworld` is modulated by the time of day: darker at night, brighter during the day. This matches vanilla behavior.
 	- `the_end`
 		- Type: `RGBA HTML color`
 		- Allowed values: [`#00000000`, `#FFFFFFFF`]
@@ -1406,6 +1498,69 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ---
 
+#### `ui_options`
+- Type: `object`
+- Configures UI visuals and rendering behavior.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `disable_item_pickup_anim`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables the item pickup animation applied to inventory slot icons when their stack counts change. This is a strictly visual change and does not affect the item stack itself.
+	- `disable_flying_inventory_item_anim`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables the 'flying item' animation when item stacks are moved between container slots, such as when shift-clicking an item stack or using an inventory hotkey. This is a strictly visual change and does not affect how or when the item stack is moved.
+	- `disable_hud_vignette`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables the vignette rendered around the edges of the HUD.
+	- `disable_hotbar_item_cooldown_overlay`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables the visual cooldown overlay rendered on relevant hotbar items, such as ender pearls or chorus fruit. This is a strictly visual change and does not remove the item cooldown itself.
+	- `slim_ui`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Reduces HUD rendering to components relevant to normal gameplay. This suppresses the debug, dash, camera, horse jump/health, progress, and cursor-position components, and renders the air bubbles, armor, and status-effect components only while their content is applicable. This may slightly improve UI rendering performance, but suppressed components will not appear.
+	- `paper_doll`
+		- Type: `object`
+		- Configures the HUD paper doll.
+		- Fields:
+			- `enabled`
+				- Type: `bool`
+				- Allowed values: {`true`, `false`}
+				- Toggles the parent object.
+			- `always_show`
+				- Type: `bool`
+				- Allowed values: {`true`, `false`}
+				- Forces the paper doll to remain visible, provided that the vanilla `Hide Paper Doll` setting is disabled. In vanilla MCBE, the paper doll may appear only under certain conditions, such as while sneaking or for 1 second after the player stops sneaking; this setting bypasses those temporary visibility rules.
+			- `screen_anchor`
+				- Type: `int`
+				- Allowed values: see [Anchor Points](#anchor-points) for a list of enumerated values.
+				- Selects which screen anchor point the paper doll will be aligned to.
+			- `screen_anchor_offset`
+				- Type: `vec2`
+				- Allowed values: *unbounded*
+				- Adjusts the position of the paper doll relative to the chosen `ui_options.paper_doll.screen_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
+			- `content_anchor`
+				- Type: `int`
+				- Allowed values: see [Anchor Points](#anchor-points) for a list of enumerated values.
+				- Defines which anchor point on the paper doll's bounding box is aligned to `ui_options.paper_doll.screen_anchor`.
+			- `scale`
+				- Type: `float`
+				- Allowed values: *unbounded*
+				- Applies a uniform scale factor to the paper doll. A scale of `1.0` preserves its vanilla size.
+			- `y_rotation`
+				- Type: `float`
+				- Allowed values: [`-180.0`, `180.0`)
+				- Sets the paper doll's rotation, in degrees, about its vertical axis. The vanilla rotation is `-22.5` degrees.
+
+---
+
 #### `use_xbox_profile_pictures`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
@@ -1436,11 +1591,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `inverse_fov_multiplier`
 		- Type: `float`
 		- Allowed values: *unbounded*
-		- Sets the initial FOV amount the moment you start zooming (before any scroll). Effective FOV = `<base fov>` / `inverse_fov_multiplier`. A multiplier of `1.0` is the baseline, indicating that the initial zoom amount is equal to: `1.0` * the current FOV (identical).
+		- Sets the initial FOV amount the moment you start zooming (before any scroll). Effective FOV = `<base fov>` / `zoom.inverse_fov_multiplier`. A multiplier of `1.0` is the baseline, indicating that the initial zoom amount is equal to: `1.0` * the current FOV (identical).
 	- `inverse_sensitivity_multiplier`
 		- Type: `float`
 		- Allowed values: *unbounded*
-		- Scales mouse sensitivity while zooming. Effective sensitivity = `<base sensitivity>` / `inverse_sensitivity_multiplier`. A multiplier of `1.0` is the baseline, indicating that the sensitivity is equal to: `1.0` * the current sensitivity (identical).
+		- Scales mouse sensitivity while zooming. Effective sensitivity = `<base sensitivity>` / `zoom.inverse_sensitivity_multiplier`. A multiplier of `1.0` is the baseline, indicating that the sensitivity is equal to: `1.0` * the current sensitivity (identical).
 	- `scroll_delta`
 		- Type: `float`
 		- Allowed values: *unbounded*
