@@ -1,5 +1,5 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.18.1-beta`<br>
+As-of version: `1.18.1-rc.1`<br>
 Last updated: `September 2, 2026`<br>
 
 ---
