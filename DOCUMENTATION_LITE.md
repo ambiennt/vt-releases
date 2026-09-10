@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.18.1-rc.1`<br>
-Last updated: `September 2, 2026`<br>
+As-of version: `1.18.2-beta`<br>
+Last updated: `September 10, 2026`<br>
 
 ---
 ---
@@ -316,6 +316,10 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Toggles the parent object.
+	- `disable_client_auth_item_use_state`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Allows server updates to correct the local player's using-item state instead of replacing them with the client-predicted value, disabling the built-in behavior from JIIMS. This prevents a recent bug caused by CubeCraft's anti-cheat from causing the client and server to disagree about whether the player is using an item. This option is intended as a temporary compatibility workaround and will be removed once it is no longer necessary.
 	- `disable_serverside_entity_culling`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -374,6 +378,10 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Type: `string`
 		- Allowed values: *any valid `.ttf` or `.otf` file name*
 		- Specifies the font file name within the `.\fonts\` folder. Example: `my_font.ttf`. If the value is empty, has an unsupported extension, or refers to a file that cannot be read or parsed as a font, no custom font is loaded and VT continues using its built-in Segoe UI font.
+	- `pixel_font_mode`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Enables crisp, hard-edged rendering for pixel-style fonts using monochrome rasterization and hinting. This mode changes how font sizes are interpreted, so fonts may appear larger and may require particular sizes to maintain even pixel proportions. If you want to use Minecraft's default Mojangles font, copy `.\data\fonts\Mojangles.ttf` from the game installation directory into the mod's `.\fonts\` folder and set `custom_font.file_name` accordingly. Mojangles renders most consistently at font sizes that are multiples of 10.0.
 
 ---
 
