@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.18.2-beta`<br>
-Last updated: `September 10, 2026`<br>
+As-of version: `1.18.3-beta`<br>
+Last updated: `October 15, 2026`<br>
 
 ---
 ---
@@ -13,7 +13,7 @@ VT is developed for the keyboard and mouse control scheme. Other schemes, such a
 
 The VT DLL is built for the 64-bit version of Minecraft for Windows and requires an x86-64 CPU with AVX2 (or newer) instruction set support.
 
-The current versions that VT supports are: `1.21.114`.
+The current versions that VT supports are: `26.33`.
 
 ---
 ---
@@ -22,7 +22,7 @@ The current versions that VT supports are: `1.21.114`.
 
 At any given time, VT will likely **not** support the latest version of Minecraft Bedrock Edition (MCBE). It is therefore recommended that users disable automatic Microsoft Store updates (if applicable) and use a third-party version manager, such as [mc-w10-version-launcher](https://github.com/MCMrARM/mc-w10-version-launcher), to install and manage supported versions of the game.
 
-**To ensure proper functionality, VT requires MCBE to be installed as an unpackaged application.** An unpackaged installation stores the game as loose files in a normal, writable directory rather than under `C:\Program Files\WindowsApps\`. Running VT with the standard Microsoft Store-packaged installation is unsupported and may cause some features to behave incorrectly or fail entirely due to UWP sandboxing and filesystem restrictions. `mc-w10-version-launcher` installs MCBE in the required unpackaged form and is therefore the recommended installation method.
+If the version manager fails to unpack the game's `.msixvc` package, you can use [mcbe-gdk-unpack-archive](https://github.com/bubbles-wow/mcbe-gdk-unpack-archive) to download the matching GDK build as a plain archive and extract it manually. The archive contains the unpacked game files, avoiding the license-gated virtual disk format used inside `.msixvc` packages.
 
 The mod, distributed as a `.dll`, must be injected into a running instance of MCBE using a DLL injector. Any compatible injector may be used, though [MCBE-DLL-Injector](https://github.com/ambiennt/MCBE-DLL-Injector/releases/) is recommended for its simple UI and minimal dependencies.
 
@@ -32,7 +32,7 @@ A successful injection will display the `Vanilla Tweaks Lite by Ambient` waterma
 
 For simplicity, and to keep development focused on core features, VT does not provide a configuration UI. All configuration and user-provided files are stored in the mod directory:
 
-`%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\RoamingState\VanillaTweaks\`
+`%APPDATA%\Minecraft Bedrock\vanilla_tweaks\`
 
 This directory can be opened by entering the path above into the Windows `Run` dialog. The mod directory and its root `config.json` file are created automatically upon injection if they do not already exist. The active `config.json` is loaded when VT is injected and can be reloaded at runtime using the in-game `.config reload` command.
 
@@ -77,7 +77,7 @@ The `Allowed values` field uses set, interval, and descriptive notation:
 
 #### Server Addresses
 
-Server addresses use the `<address>:<port>` format. The `address` may be a DNS hostname or a numeric IP address, and `port` must be a value in the range `[0, 65535]`.
+Server addresses use the `<address>:<port>` format. The `address` may be a DNS hostname or a numeric IP address, and `port` must be a value in the range `[0, 65535]`. IPv6 addresses must be enclosed in square brackets so their colons are not confused with the port separator.
 
 The `*` symbol may be used as a port wildcard, meaning "all ports for this address."
 
@@ -86,6 +86,8 @@ Examples:
 - `127.0.0.1:3000`
 - `play.example1.net:19132`
 - `geo.server.com:*`
+- `[2001:db8::1]:19132`
+- `[2001:db8::1]:*`
 
 ---
 ---
@@ -123,13 +125,13 @@ Controls the custom chat system for the `custom_chat` feature. Aliases: `cc`.
 
 The `enable` enum activates custom chat mode. When enabled, messages will default to being routed through the configured external chat server. This does not establish a network connection by itself.
 
-The `disable` enum deactivates custom chat mode. Messages will default to vanilla Minecraft chat instead. This also does not close an existing connection to the external chat server; it only changes message routing behavior.
+The `disable` enum deactivates custom chat mode. Outgoing messages will default to vanilla Minecraft chat instead. It does not close an existing connection to the external chat server, so incoming custom chat messages will still appear while connected.
 
 The `connect` enum attempts to establish a connection to the configured `custom_chat` endpoint. If not currently connected, this must be called before messages can be sent through the external chat server. If already connected or currently connecting, the request is ignored.
 
 The `disconnect` enum closes the current connection to the external chat server. If not currently connected, the request is ignored.
 
-Note: `enable`/`disable` control how messages are routed, while `connect`/`disconnect` control the network connection state. You may remain connected to the external chat server even while custom chat is disabled; in that case, messages will simply not be routed to it unless explicitly prefixed.
+Note: `enable`/`disable` control outgoing message routing, while `connect`/`disconnect` control the network connection. When custom chat mode is disabled but the client remains connected, incoming custom chat messages still appear, and outgoing messages use vanilla chat unless explicitly prefixed.
 
 Example usage:
 - `.customchat enable`
@@ -174,11 +176,21 @@ Example usage:
 ---
 
 #### `netstat [verbose: bool = false]`
-Describes various network statistics, such as ping and total throughput. Aliases: `.ping`.
+Displays network statistics for the currently connected server. Aliases: `.ping`.
 
 Example usage:
 - `.netstat true`
 - `.ping`
+
+---
+
+#### `transfer <endpoint: string>`
+Transfers from the current server to another server. The endpoint must include a port and may be a hostname, IPv4 address, or bracketed IPv6 address. Ports may be in the range `[0, 65535]`.
+
+Example usage:
+- `.transfer play.example.net:19132`
+- `.transfer 127.0.0.1:19132`
+- `.transfer [2001:db8::1]:19132`
 
 ---
 
@@ -218,6 +230,8 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 - JIIMS immediately clears the local player's item-use state once the item being used reaches its charged state, such as when a crossbow finishes charging. In vanilla MCBE, the client may continue treating the item as actively being used until the server acknowledges the completed use state, causing the charging/charged animation and related item-use state to repeat or persist unnecessarily. JIIMS ends the client use state as soon as the charged item is detected, making charged-item use feel more responsive, particularly on higher-latency connections.
 
+- Simulation-tick interactions behave differently for interactive blocks (e.g. crafting tables, chests, buttons, levers). A simulation-tick interact is only sent once per block position for interactive blocks; further interactions will not repeat until the player manually resends interact on a different block coordinate.
+
 - The client's latency-sensitive local actor states now ignore stale server-initiated metadata corrections. This includes sneaking, sprinting, item use, gliding, spin attack, swimming, and crawling. When the server sends actor flag updates for the local player, JIIMS preserves the client's currently predicted values for these states instead of allowing the server to overwrite them with potentially delayed data. This reduces visible twitching and interruption on high latency connections, such as sprint/sneak jitter, crossbow charging flicker, swimming/crawling state corrections, and other short-lived state desynchronizations. Note: these states are preserved only for local client continuity; the server remains authoritative over whether the corresponding gameplay action is accepted.
 
 - The local player's hitbox and collision box are predicted client-side instead of being sourced exclusively from server metadata. Server updates to the local player's width, height, hitbox, and collision box metadata are ignored, while actor scale updates are still allowed. Instead, JIIMS updates the local collision shape directly in response to client-predicted pose changes. This improves consistency for movement states that depend on the player's current pose, such as sneaking, swimming, crawling, and gliding, without waiting for the server to send updated collision metadata. As with other JIIMS prediction changes, this affects the client's local prediction and presentation only; the server remains authoritative for gameplay and collision validation.
@@ -235,13 +249,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 - Type: `bool`
 - Allowed values: {`true`, `false`}
 - Plays the right arm/right item swing animation when attacking while using an item. The first-person animation is modeled after MCJE 1.7. This is a strictly visual change, and does not actually relay an attack input to the server.
-
----
-
-#### `background_app_execution`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Allows MCBE to continue running while minimized or tabbed out from a fullscreen window. This can prevent the client from reloading resources or automatically disconnecting while logged into a server. For this feature to work, Minecraft must also be enabled under Windows `Background apps` settings. Otherwise, this feature will silently fail.
 
 ---
 
@@ -316,19 +323,10 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Toggles the parent object.
-	- `disable_client_auth_item_use_state`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Allows server updates to correct the local player's using-item state instead of replacing them with the client-predicted value, disabling the built-in behavior from JIIMS. This prevents a recent bug caused by CubeCraft's anti-cheat from causing the client and server to disagree about whether the player is using an item. This option is intended as a temporary compatibility workaround and will be removed once it is no longer necessary.
 	- `disable_serverside_entity_culling`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Disables CubeCraft's perspective-based server-side entity culling. CubeCraft uses both distance-based and perspective-based culling to avoid sending entities that the server believes should not currently be visible to the player. This option only affects the perspective-based system and does not disable distance-based culling. Perspective-based culling is used while the server believes the player is in first-person perspective, and hides entities that it determines are outside the player's field of view. Because this visibility decision is made server-side, latency or stale perspective/view information can cause entities to pop in/out, appear late, or remain invisible even when they should be visible on the client.
-	- `network_stack_latency_batch_interval_ms`
-		- Type: `int`
-		- Allowed values: [`0`, `100`]
-		- Sets the batching interval, in milliseconds, for responses to network latency requests sent by the server. Some servers send these packets at very high frequencies and expect the client to echo each one back. Instead of responding immediately, this option queues the responses and releases them together at the configured interval, allowing multiple responses to be combined into the same outgoing network batch. A value of `0` disables this behavior and leaves the normal response timing unchanged. CubeCraft currently appears to have a congestion-control issue that can cause ping to spike into the thousands of milliseconds when these packets are exchanged at extremely short intervals. Batching them reduces the number of individual network transmissions and avoids these extreme latency spikes **without delaying normal gameplay packets**. Higher values provide stronger mitigation by allowing more responses to accumulate per batch, with `100` milliseconds providing the maximum effect. Use at your own risk: this changes the server's measurement of client/network-stack latency and may affect anti-cheat heuristics that rely on it. On CubeCraft, higher values may currently cause reach or velocity flags, although these flags do not appear to result in automatic bans at the time of writing.
-
 ---
 
 #### `custom_chat`
@@ -779,7 +777,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 #### `inventory_hotkeys`
 - Type: `object`
-- Allows moving, swapping, and adding items within/between/from containers with a single key press. The inspiration for this feature comes from MCJE, in which hovering over a container slot and pressing one of the hotbar slot keys will swap the item stack in the hovered slot with the item stack in the respective hotbar slot. This implementation differs from MCJE in that item stacks of the same item type are added instead of swapped, where applicable.
+- Allows moving, swapping, and adding items within/between/from containers with a single key press. The inspiration for this feature comes from MCJE, in which hovering over a container slot and pressing one of the hotbar slot keys will swap the item stack in the hovered slot with the item stack in the respective hotbar slot. This implementation differs from MCJE in that item stacks of the same item type are added instead of swapped, where applicable. When enabled, it replaces the vanilla inventory behavior for hotbar slot keys while a container screen is open.
 - Fields:
 	- `enabled`
 		- Type: `bool`
@@ -788,7 +786,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `drop_hotbar_selected_stack_key`
 		- Type: `int`
 		- Allowed values: see [Key Codes](#key-codes) for a list of enumerated values.
-		- The key code used to drop the entire hovered item stack while in HUD. This provides a more accessible alternative to the vanilla control + `Drop Item` keybind by allowing the action to be performed with a single key press.
+		- The key code used to drop the entire hovered item stack while in HUD. This provides a more accessible alternative to the vanilla control + `Drop Item` key combination by allowing the action to be performed with a single key press.
 	- `drop_hovered_stack_key`
 		- Type: `int`
 		- Allowed values: see [Key Codes](#key-codes) for a list of enumerated values.
@@ -797,13 +795,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Toggles the 'flying item' animation when an item stack is being swapped. This is the same animation that plays in vanilla MCBE when an item stack is shift-clicked into another slot. Disabling this animation means that the swap appears 'instant'. This setting has no effect while `ui_options.disable_flying_inventory_item_anim` is enabled.
-
----
-
-#### `inventory_player_rotation_fix`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Fixes an animation bug with the paper doll in the inventory screen in which the model's root z rotation towards the cursor is inverted.
 
 ---
 
@@ -1004,36 +995,24 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 #### `legacy_ui`
 - Type: `object`
-- Overrides certain UI screens with their legacy, JSON-based equivalents. Legacy screens generally load faster and are configurable via resource packs.
+- Overrides specific Ore UI screens with their legacy, JSON UI equivalents. Legacy screens generally load faster and are configurable via resource packs.
 - Fields:
 	- `enabled`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Toggles the parent object.
-	- `accessibility_settings_screen`
+	- `settings_screen`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Overrides the web-based Ore UI accessibility settings screen with the legacy JSON-based screen.
-	- `audio_settings_screen`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Overrides the web-based Ore UI audio settings screen with the legacy JSON-based screen.
-	- `classic_skin_picker_screen`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Overrides the 1.13+ persona dressing room screen with the 1.12.1 (and prior) skin picker screen. An additional advantage of this screen is that the layout is arguably more user-friendly and does not require any workarounds to display user-made skin packs with custom geometry or capes. Note: this is a deprecated feature. `skin_sideloader` should be used for changing skins instead of via this screen.
+		- Overrides the Ore UI settings screens (accessibility, audio, and video settings) with their legacy JSON-based equivalents.
 	- `disconnect_screen`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Overrides the web-based Ore UI disconnect screen with the legacy JSON-based screen.
+		- Overrides the Ore UI disconnect screen with the legacy JSON-based screen.
 	- `play_and_create_world_screens`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Overrides the web-based Ore UI play and create world screens with the legacy JSON-based screens.
-	- `video_settings_screen`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Overrides the web-based Ore UI video settings screen with the legacy JSON-based screen.
+		- Overrides the Ore UI play and create world screens with the legacy JSON-based screens.
 
 ---
 
@@ -1313,21 +1292,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ---
 
-#### `protocol_proxy`
-- Type: `object`
-- Enables protocol translation between the client's native version and a different target protocol version. This allows the client to join servers enforcing a newer protocol version. Current target protocol version: `1.21.132`. This feature is not supported on all servers and is currently only tested on CubeCraft. Certain content introduced after the client's native game version, such as newer blocks and items, is not implemented and will not function correctly.
-- Fields:
-	- `enabled`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Toggles the parent object.
-	- `servers`
-		- Type: `array` of `string`
-		- Allowed values: *any server address*
-		- Specifies a whitelist of servers on which protocol translation is applied. The proxy will only activate when connecting to a listed server.
-
----
-
 #### `render_options`
 - Type: `object`
 - Various settings to change rendering visuals.
@@ -1348,7 +1312,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Disables frame vertical synchronization (vsync) at the graphics backend level. This feature is useful if you are on a device in which the following do not work to disable vsync:
-			- Setting the internal vanilla `gfx_vsync` option to `0`, i.e. `gfx_vsync:0` in `%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\minecraftpe\options.txt`
+			- Setting the internal vanilla `gfx_vsync` option to `0`, i.e. `gfx_vsync:0` in `%APPDATA%\Minecraft Bedrock\Users\<USER ID>\games\com.mojang\minecraftpe\options.txt`. `<USER ID>` is the Minecraft-generated folder for the active user profile; its derivation is internal and varies by account.
 			- Disabling vsync for `Minecraft.Windows.exe` in your graphics card control panel
 ---
 
@@ -1572,7 +1536,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 #### `use_xbox_profile_pictures`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
-- Uses Xbox Live profile pictures for all players, overriding the default Marketplace/Persona-generated skin headshot system.
+- Uses Xbox Live profile pictures ('gamerpics') in place of the default Marketplace/Persona-generated headshots. Images are fetched in batches, downloaded at the game's 64×64 profile-picture size, and saved in `%LOCALAPPDATA%\Temp\Minecraft Bedrock\minecraftpe\XblProfileCache\`. Existing cache files are reused across DLL reloads. A world player list image is refreshed when the downloaded file becomes available in JSON UI screens; Ore UI screens do not currently receive this refresh. Fetching requires an available signed-in Xbox user. Requests are paced and retried after Xbox rate limits; the feature can therefore take time to fill images in the world player list when many players join at once.
 
 ---
 
@@ -1693,7 +1657,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 | Numpad 7           |   103 |
 | Numpad 8           |   104 |
 | Numpad 9           |   105 |
-| Mulitply           |   106 |
+| Multiply           |   106 |
 | Add                |   107 |
 | Subtract           |   109 |
 | Decimal            |   110 |
