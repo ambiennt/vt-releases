@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.18.3-beta`<br>
-Last updated: `October 15, 2026`<br>
+As-of version: `1.18.4-beta`<br>
+Last updated: `October 22, 2026`<br>
 
 ---
 ---
@@ -9,7 +9,7 @@ Last updated: `October 15, 2026`<br>
 
 Vanilla Tweaks™ Lite (VT) is a native, Dynamic Link Library (DLL) mod for Minecraft Bedrock Edition for Windows, developed and owned by ambient (`@ambiennt` on Discord). It aims to make subtle, but powerful improvements to gameplay (specifically PVP), as well as add several quality of life mods.
 
-VT is developed for the keyboard and mouse control scheme. Other schemes, such as controller, are not officially supported.
+VT is developed for the keyboard and mouse control scheme. Other schemes, such as controller, are not supported.
 
 The VT DLL is built for the 64-bit version of Minecraft for Windows and requires an x86-64 CPU with AVX2 (or newer) instruction set support.
 
@@ -25,6 +25,8 @@ At any given time, VT will likely **not** support the latest version of Minecraf
 If the version manager fails to unpack the game's `.msixvc` package, you can use [mcbe-gdk-unpack-archive](https://github.com/bubbles-wow/mcbe-gdk-unpack-archive) to download the matching GDK build as a plain archive and extract it manually. The archive contains the unpacked game files, avoiding the license-gated virtual disk format used inside `.msixvc` packages.
 
 The mod, distributed as a `.dll`, must be injected into a running instance of MCBE using a DLL injector. Any compatible injector may be used, though [MCBE-DLL-Injector](https://github.com/ambiennt/MCBE-DLL-Injector/releases/) is recommended for its simple UI and minimal dependencies.
+
+If the DLL injector cannot find MCBE even though it is running, or an injection attempt appears to do nothing, close and reopen it with elevated privileges (i.e., right-clicking and pressing **Run as administrator**), then retry. Windows may otherwise deny the injector the process access needed to load the DLL.
 
 Some antivirus software may incorrectly flag or quarantine the VT DLL. If this occurs, adding the DLL or VT directory as an antivirus exclusion may be necessary. For users running Windows Defender, [Defender Control](https://github.com/pgkt04/defender-control) is recommended if fully disabling the antivirus is required.
 
@@ -402,6 +404,37 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ---
 
+#### `debug_render_options`
+- Type: `object`
+- Controls the MCBE's debug rendering overrides.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `disable_terrain_rendering`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables terrain rendering.
+	- `disable_entity_rendering`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables entity rendering.
+	- `disable_block_entity_rendering`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables block entity rendering, such as chest models.
+	- `disable_sky_rendering`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables clouds, sun, and moon tessellation, and sky tinting. This is an override of disabling the vanilla `Render Clouds` and `Beautiful Skies` setting. Enabling this setting nets a minor performance improvement.
+	- `disable_weather_rendering`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables rain, snow, and thunder rendering. Enabling this setting nets a minor performance improvement when such weather is present.
+
+---
+
 #### `disable_block_waterlogging`
 - Type: `object`
 - Prevents the local player from waterlogging configured blocks with a water bucket. 'Waterlogging' refers to placing a water source block inside another block. When a block listed in `disable_block_waterlogging.block_whitelist` is targeted, water placement is redirected to the adjacent position on the selected face. The interaction is blocked if that position cannot directly receive water or is another protected waterloggable block. Other bucket types and blocks not listed in the whitelist retain their vanilla behavior.
@@ -627,6 +660,13 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		// ...
 	}
 	```
+
+---
+
+#### `fast_kbm_input`
+- Type: `bool`
+- Allowed values: {`true`, `false`}
+- Preserves available keyboard and mouse button transitions between frames, helping prevent quick presses and releases from being skipped at low frame rates. While the window remains focused, available mouse movement, button, and scroll readings are processed individually in order. This alternative input processing system only updates keyboard and mouse input and ignores other kinds of input, such as gamepad or touch. This feature does not support mouse-to-touch emulation, Windows ClickLock, Windows wheel-direction inversion, or the absolute-movement fallback for remote sessions.
 
 ---
 
@@ -1292,30 +1332,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ---
 
-#### `render_options`
-- Type: `object`
-- Various settings to change rendering visuals.
-- Fields:
-	- `enabled`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Toggles the parent object.
-	- `disable_sky_rendering`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Disables clouds, sun, and moon tessellation, and sky tinting. This is an override of disabling the vanilla `Render Clouds` and `Beautiful Skies` setting. Enabling this setting nets a minor performance improvement.
-	- `disable_weather_rendering`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Disables rain, snow, and thunder rendering. Enabling this setting nets a minor performance improvement when such weather is present.
-	- `force_disable_vsync`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Disables frame vertical synchronization (vsync) at the graphics backend level. This feature is useful if you are on a device in which the following do not work to disable vsync:
-			- Setting the internal vanilla `gfx_vsync` option to `0`, i.e. `gfx_vsync:0` in `%APPDATA%\Minecraft Bedrock\Users\<USER ID>\games\com.mojang\minecraftpe\options.txt`. `<USER ID>` is the Minecraft-generated folder for the active user profile; its derivation is internal and varies by account.
-			- Disabling vsync for `Minecraft.Windows.exe` in your graphics card control panel
----
-
 #### `saturation_display`
 - Type: `object`
 - Displays the local player's saturation attribute value in the HUD. The display text has precision up to 2 decimal places.
@@ -1466,7 +1482,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 #### `theme_accent_color`
 - Type: `RGBA HTML color`
 - Allowed values: [`#00000000`, `#FFFFFFFF`]
-- Sets the accent color used by VT in chat messages. Currently, a translucent alpha channel is not supported. This color is also accessible via the formatting code `§w`.
+- Sets the accent color used by VT in chat messages. Currently, a translucent alpha channel is not supported. This color is also accessible via the formatting code `§x`.
 
 ---
 
@@ -1536,7 +1552,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 #### `use_xbox_profile_pictures`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
-- Uses Xbox Live profile pictures ('gamerpics') in place of the default Marketplace/Persona-generated headshots. Images are fetched in batches, downloaded at the game's 64×64 profile-picture size, and saved in `%LOCALAPPDATA%\Temp\Minecraft Bedrock\minecraftpe\XblProfileCache\`. Existing cache files are reused across DLL reloads. A world player list image is refreshed when the downloaded file becomes available in JSON UI screens; Ore UI screens do not currently receive this refresh. Fetching requires an available signed-in Xbox user. Requests are paced and retried after Xbox rate limits; the feature can therefore take time to fill images in the world player list when many players join at once.
+- Uses Xbox Live profile pictures ('gamerpics') in place of the default Marketplace/Persona-generated headshots. Images are fetched in batches, downloaded at the game's 64×64 profile-picture size, and saved in `%LOCALAPPDATA%\Temp\Minecraft Bedrock\minecraftpe\XblProfileCache\`. Existing cache files are reused across DLL reloads. World player list images are refreshed when downloaded files become available in both JSON UI and Ore UI screens. Fetching requires an available signed-in Xbox user. Requests are paced and retried after Xbox rate limits; the feature can therefore take time to fill images in the world player list when many players join at once.
 
 ---
 
@@ -1582,15 +1598,16 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 #### Key Codes
 
+Keybinds use Windows virtual-key codes, with `0` representing an unassigned key.
+
 | Enumeration        | Value |
 | ------------------ | ----: |
-| Left Click         |   -99 |
-| Right Click        |   -98 |
-| Middle Click       |   -97 |
-| Back Button        |   -95 |
-| Forward Button     |   -94 |
 | Unassigned         |     0 |
-| Go Back            |     4 |
+| Left Click         |     1 |
+| Right Click        |     2 |
+| Middle Click       |     4 |
+| Back Button        |     5 |
+| Forward Button     |     6 |
 | Backspace          |     8 |
 | Tab                |     9 |
 | Enter              |    13 |
