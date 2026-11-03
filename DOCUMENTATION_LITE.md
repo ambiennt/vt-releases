@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.18.4-beta`<br>
-Last updated: `October 22, 2026`<br>
+As-of version: `1.18.4-rc.1`<br>
+Last updated: `November 2, 2026`<br>
 
 ---
 ---
@@ -228,7 +228,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 - In vanilla MCBE, certain 'simulation-tick' item-use interactions (automatically generated while interact is held, rather than from discrete input presses) are still forwarded to the server even when they are predicted to fail. This contributes to client/server block placement desynchronization and reduced item-use reliability on higher latency connections. JIIMS cancels these predicted-failure interactions to ensure only meaningful item-use actions are sent during continuous use (e.g., holding interact while placing blocks or using items).
 
-- When a container screen is closed, JIIMS preserves the client's predicted item stack state for the hotbar, offhand, and armor slots, where applicable. In vanilla MCBE, inventory changes made within a container screen are predicted immediately while the screen remains open, but the corresponding player inventory slots outside the container screen don't reflect those changes until the server acknowledges them. JIIMS carries the container screen's predicted state into the player's local inventory when the screen closes, allowing the client to immediately use or otherwise interact with the updated item stacks instead of waiting for a server acknowledgement, which is especially beneficial on higher-latency connections.
+- When a container screen is closed, JIIMS preserves the client's predicted item stack state for the main inventory, hotbar, offhand, armor, and shared UI slots, where applicable, including items returned from the cursor and crafting/table inputs. In vanilla MCBE, inventory changes made within a container screen are predicted immediately while the screen remains open, but the corresponding player inventory slots outside the container screen don't reflect those changes until the server acknowledges them. JIIMS carries the container screen's predicted state into the player's local inventory when the screen closes, allowing the client to immediately use or otherwise interact with the updated item stacks instead of waiting for a server acknowledgement, which is especially beneficial on higher-latency connections. These predictions carry across immediately opening another container, so inventory actions in that screen start from the predicted close result. Newer moves in the opened screen take precedence, and server rejections remain authoritative.
 
 - JIIMS immediately clears the local player's item-use state once the item being used reaches its charged state, such as when a crossbow finishes charging. In vanilla MCBE, the client may continue treating the item as actively being used until the server acknowledges the completed use state, causing the charging/charged animation and related item-use state to repeat or persist unnecessarily. JIIMS ends the client use state as soon as the charged item is detected, making charged-item use feel more responsive, particularly on higher-latency connections.
 
@@ -270,7 +270,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 #### `client_side_container_opening`
 - Type: `object`
-- Opens configured container screens client-side without waiting for server acknowledgement. This makes opening supported containers effectively instant, instead of dependent on ping. Compatibility is server-dependent because the client must be able to predict the protocol-level information that the server expects before receiving its acknowledgement.
+- Opens configured container screens client-side without waiting for server acknowledgement. Inventory open and close requests still reach the server, while the client opens the inventory and completes container close cleanup immediately. Matching inventory open acknowledgements are consumed even if the inventory has already been closed locally.
 - Fields:
 	- `enabled`
 		- Type: `bool`
@@ -1113,11 +1113,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `require_at_symbol`
     	- Type: `bool`
     	- Allowed values: {`true`, `false`}
-    	- When `true`, the player's display name only triggers the sound when mentioned with an `@` prefix, such as `@username`. When `false`, the player's display name may also trigger the sound as a standalone space-delimited word.
+		- When `true`, the player's display name only triggers the sound when mentioned with an `@` prefix, such as `@username`. Names consisting entirely of digits, or containing characters other than ASCII letters, digits, or `()-.:?_`, require double quotes after `@`, such as `@"Player Name"` or `@"1234"`. Mentions can appear anywhere in the message and must end at the end of the message or before a character other than an ASCII letter or digit, so `"@username"`, `@username,`, and `(@username)` are recognized. Matching is case-insensitive. When `false`, the player's display name may also trigger the sound as a standalone space-delimited word.
 	- `additional_triggers`
 		- Type: `array` of `string`
 		- Allowed values: *any non-empty string*
-		- Adds extra case-insensitive mention triggers. Each trigger matches as a standalone space-delimited word. Empty triggers are ignored.
+		- Adds extra case-insensitive mention triggers. Triggers beginning with `@`, such as `@here`, use the same boundary rule as player mentions. Other triggers match as standalone space-delimited words. Empty triggers are ignored.
 
 ---
 
