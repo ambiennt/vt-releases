@@ -1,6 +1,6 @@
 Vanilla Tweaks™ Lite documentation<br>
-As-of version: `1.18.4-rc.1`<br>
-Last updated: `November 2, 2026`<br>
+As-of version: `1.19.0-beta`<br>
+Last updated: `November 19, 2026`<br>
 
 ---
 ---
@@ -232,6 +232,10 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 - JIIMS immediately clears the local player's item-use state once the item being used reaches its charged state, such as when a crossbow finishes charging. In vanilla MCBE, the client may continue treating the item as actively being used until the server acknowledges the completed use state, causing the charging/charged animation and related item-use state to repeat or persist unnecessarily. JIIMS ends the client use state as soon as the charged item is detected, making charged-item use feel more responsive, particularly on higher-latency connections.
 
+- When opening a container releases the cursor, JIIMS resends held shift so shift-click works immediately even if shift was pressed before opening the screen.
+
+- Enchantment options can be clicked while holding shift, allowing items to be shift-clicked into the enchanting table and enchanted without releasing shift.
+
 - Simulation-tick interactions behave differently for interactive blocks (e.g. crafting tables, chests, buttons, levers). A simulation-tick interact is only sent once per block position for interactive blocks; further interactions will not repeat until the player manually resends interact on a different block coordinate.
 
 - The client's latency-sensitive local actor states now ignore stale server-initiated metadata corrections. This includes sneaking, sprinting, item use, gliding, spin attack, swimming, and crawling. When the server sends actor flag updates for the local player, JIIMS preserves the client's currently predicted values for these states instead of allowing the server to overwrite them with potentially delayed data. This reduces visible twitching and interruption on high latency connections, such as sprint/sneak jitter, crossbow charging flicker, swimming/crawling state corrections, and other short-lived state desynchronizations. Note: these states are preserved only for local client continuity; the server remains authoritative over whether the corresponding gameplay action is accepted.
@@ -247,10 +251,161 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ### Configurable Features
 
-#### `attack_while_using_item_anim`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Plays the right arm/right item swing animation when attacking while using an item. The first-person animation is modeled after MCJE 1.7. This is a strictly visual change, and does not actually relay an attack input to the server.
+#### `animation_options`
+- Type: `object`
+- Various options to customize how items, players, and the camera animate.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `attack_while_using_item`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Plays the right arm/right item swing animation when attacking while using an item. The first-person animation is based on the MCJE 1.7 swing animation. This is a strictly visual change and does not network an attack action to the server.
+	- `disable_projectile_throw_swing`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Disables the first and third-person right arm/right item swing animation when throwing a projectile. This behavior is based on MCJE 1.7. This only disables the animation for the local player, not other players.
+	- `sword_block`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Enables a custom implementation based on the MCJE 1.7 sword blocking animation in first and third person while interacting with a sword. This is a strictly visual change and does not network a sword block action to the server.
+	- `item_matrix_fix`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Restores the default hardcoded matrix transformations (position, rotation, and scale) for certain vanilla items (such as snowballs and arrows) and all custom items, bypassing their data-driven settings.
+	- `java_body_rotation`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Keeps the player's body aligned with their head when strafing backwards, based on the MCJE 1.9+ body rotation behavior. Vanilla MCBE instead turns the body diagonally relative to the head when strafing backwards.
+	- `java_bow`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Enables a custom implementation based on the MCJE 1.7 bow animation in first and third person. This replaces the default JSON-based bow attachable. When enabled, it also allows `enchant_glint_color.smooth_world_uv` to apply to bows.
+	- `java_crossbow`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Enables a custom implementation based on the MCJE 1.14+ crossbow animation in first and third person. This replaces the default JSON-based crossbow attachable. When enabled, it also allows `enchant_glint_color.smooth_world_uv` to apply to crossbows.
+	- `java_fire`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Changes the fire model and UV animation rendered for entities on fire to resemble that of MCJE 1.7.
+	- `limb_swing_fix`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Fixes a bug where pressing the jump key reduces the player's arm and leg swing amplitude while moving.
+	- `java_first_person_item_height`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Replaces the first-person item height animation with rules based on MCJE 1.7 for the mainhand, mirrored for the offhand. Items lower and rise when equipping items, switching hotbar slots, placing blocks, or consuming items.
+	- `camera_offset_interpolation`
+		- Type: `object`
+		- Controls the camera's transition speed when sneaking, climbing, sleeping, or entering a horizontal pose. Each response specifies the fraction of the remaining distance covered in 50 ms: `0.5` matches the vanilla decay rate, while `1.0` snaps to the target on the next update. Values below `0.05` are clamped to `0.05` so the offset continues moving toward its target.
+		- Fields:
+			- `enabled`
+				- Type: `bool`
+				- Allowed values: {`true`, `false`}
+				- Toggles the parent object.
+			- `sneak_response`
+				- Type: `float`
+				- Allowed values: [`0.05`, `1.0`]
+				- Controls the camera's transition speed when sneaking and standing back up.
+			- `climbing_response`
+				- Type: `float`
+				- Allowed values: [`0.05`, `1.0`]
+				- Controls the camera's transition speed when entering and leaving a climbing offset.
+			- `sleeping_response`
+				- Type: `float`
+				- Allowed values: [`0.05`, `1.0`]
+				- Controls the camera's transition speed when sleeping and waking up.
+			- `horizontal_pose_response`
+				- Type: `float`
+				- Allowed values: [`0.05`, `1.0`]
+				- Controls the camera's transition speed when entering and leaving horizontal poses, such as swimming or crawling.
+	- `java_view`
+		- Type: `object`
+		- Controls camera and first-person view animations based on the MCJE 1.7 implementation. This includes damage tilt, walking bobbing, vertical movement tilt, and first-person rotation lag. It takes precedence over the vanilla `Damage Tilt` and `View Bobbing` settings and disables the 'breathing' animation in which first-person items bob up and down slightly while idle.
+		- Fields:
+			- `enabled`
+				- Type: `bool`
+				- Allowed values: {`true`, `false`}
+				- Toggles the parent object.
+			- `camera_damage_tilt_directional_yaw`
+				- Type: `float`
+				- Allowed values: [`-180.0`, `180.0`)
+				- Controls the camera's damage tilt direction in degrees. A value of `0.0` tilts to the right, while `-180.0` tilts to the left. Values of `90.0` or `-90.0` produce forward/backward tilt.
+			- `first_person_objects_damage_tilt_directional_yaw`
+				- Type: `float`
+				- Allowed values: [`-180.0`, `180.0`)
+				- Controls the damage tilt direction of first-person objects in degrees. A value of `0.0` tilts to the right, while `-180.0` tilts to the left. Values of `90.0` or `-90.0` produce forward/backward tilt.
+			- `camera_damage_tilt_multiplier`
+				- Type: `float`
+				- Allowed values: (`-∞`, `+∞`)
+				- Controls the timing curve of the camera's damage tilt animation. This changes how the tilt progresses rather than its maximum angle. A value of `0.0` disables damage tilt for the camera. See this [visual representation](https://www.desmos.com/calculator/ruih0owh8a) of the timing curve.
+			- `first_person_objects_damage_tilt_multiplier`
+				- Type: `float`
+				- Allowed values: (`-∞`, `+∞`)
+				- Controls the timing curve of damage tilt applied to first-person objects (equipped mainhand/offhand items, hands, etc.). A value of `0.0` disables damage tilt for first-person objects.
+			- `camera_bob_strength`
+				- Type: `float`
+				- Allowed values: (`-∞`, `+∞`)
+				- Controls the strength of the camera's walking bob and vertical movement tilt. Higher values produce stronger motion. A value of `0.0` disables both effects for the camera.
+			- `first_person_objects_bob_strength`
+				- Type: `float`
+				- Allowed values: (`-∞`, `+∞`)
+				- Controls the strength of walking bob and vertical movement tilt applied to first-person objects. Higher values produce stronger motion. A value of `0.0` disables both effects for first-person objects.
+			- `first_person_objects_rotation_response`
+				- Type: `float`
+				- Allowed values: [`0.0`, `1.0`]
+				- Controls how quickly first-person objects follow changes in pitch and yaw using elapsed frame time. Higher values shorten the lag. A value of `0.5` follows half the remaining difference over 0.05 seconds, matching the MCJE 1.7 response rate. A value of `0.0` freezes the followed rotation.
+			- `first_person_objects_rotation_strength`
+				- Type: `float`
+				- Allowed values: (`-∞`, `+∞`)
+				- Scales the pitch/yaw offset of first-person objects when looking around. A value of `0.1` matches MCJE 1.7. A value of `0.0` disables this motion.
+
+---
+
+#### `block_overlay_options`
+- Type: `object`
+- Customizes the outline and highlight for the block selected by the camera's pick ray. This feature takes precedence over the vanilla `Outline Selection` setting.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `outline`
+		- Type: `object`
+		- Draws an outline along the selected block's bounding box.
+		- Fields:
+			- `enabled`
+				- Type: `bool`
+				- Allowed values: {`true`, `false`}
+				- Toggles the parent object.
+			- `color`
+				- Type: `RGBA HTML color`
+				- Allowed values: [`#00000000`, `#FFFFFFFF`]
+				- Sets the outline color and opacity.
+			- `line_thickness`
+				- Type: `float`
+				- Allowed values: [`0.0`, `0.1`]
+				- Sets the thickness of each outline edge in blocks when `use_line_thickness` is enabled.
+			- `use_line_thickness`
+				- Type: `bool`
+				- Allowed values: {`true`, `false`}
+				- Draws each outline edge as a 3D bar with rectangular faces (quads). Each bar extends inward from the bounding box and is up to `line_thickness` blocks wide and deep. When disabled, thin line segments trace the edges as a wireframe.
+	- `overlay`
+		- Type: `object`
+		- Highlights the selected block's entire model.
+		- Fields:
+			- `enabled`
+				- Type: `bool`
+				- Allowed values: {`true`, `false`}
+				- Toggles the parent object.
+			- `color`
+				- Type: `RGBA HTML color`
+				- Allowed values: [`#00000000`, `#FFFFFFFF`]
+				- Sets the highlight color.
 
 ---
 
@@ -319,7 +474,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 #### `cubecraft_tweaks`
 - Type: `object`
-- Various tweaks to improve the user experience on CubeCraft. This feature is only applied while connected to a server matching one of the addresses configured in `cubecraft_servers`.
+- Various options to improve the user experience on CubeCraft. This feature is only applied while connected to a server matching one of the addresses configured in `cubecraft_servers`.
 - Fields:
 	- `enabled`
 		- Type: `bool`
@@ -385,25 +540,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ---
 
-#### `damage_tilt`
-- Type: `object`
-- Multiplies the speed of the damage tilt animation about the target forward/look axis (local Z). The vanilla MCBE multiplier is actually `4.0`, but this appears slower than that of MCJE. A value of `0.0` effectively disables the respective damage tilt animation. Here is a [visual representation](https://www.desmos.com/calculator/ruih0owh8a) of the animation over the domain `[0.0, 1.0]`, where the exponent is the configured multiplier.
-- Fields:
-	- `enabled`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Toggles the parent object.
-	- `camera_multiplier`
-		- Type: `float`
-		- Allowed values: *unbounded*
-		- Controls the strength of the *camera* damage tilt animation. Higher values indicate a faster tilt, and vice versa.
-	- `first_person_objects_multiplier`
-		- Type: `float`
-		- Allowed values: *unbounded*
-		- Controls the strength of the damage tilt animation applied to *first-person objects* (equipped mainhand/offhand items, hands, etc. rendered in the first-person perspective). Higher values indicate a stronger faster tilt, and vice versa.
-
----
-
 #### `debug_render_options`
 - Type: `object`
 - Controls the MCBE's debug rendering overrides.
@@ -450,13 +586,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ---
 
-#### `disable_breathing_bob`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Disables the 'breathing' animation in which the first-person item(s) bob up and down slightly when the vanilla `View Bobbing` setting is enabled. The ability to disable this animation exists to be in parity with MCJE.
-
----
-
 #### `disable_chat_tts_hotkey`
 - Type: `bool`
 - Allowed values: {`true`, `false`}
@@ -469,13 +598,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 - Type: `bool`
 - Allowed values: {`true`, `false`}
 - Prevents mouse wheel scrolling from changing the currently selected hotbar slot. Hotbar slots may still be selected through their corresponding hotkeys. This feature is primarily intended to help the user learn and rely on hotbar hotkeys instead of scrolling through slots with the mouse wheel.
-
----
-
-#### `disable_projectile_throw_swing_anim`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Disables the first and third-person right arm/right item swing animation when throwing a projectile. The ability to disable this animation exists to be in parity with MCJE. This only disables the animation for the local player, as there is no way to filter on a swing animation triggered by other players throwing projectiles.
 
 ---
 
@@ -513,26 +635,26 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Sets the UV rotation, in degrees, for the enchant glint rendered on world items and equipment. The X and Y components control the rotation of each glint layer.
 	- `ui_inverse_uv_scale_multiplier`
 		- Type: `int`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`)
 		- Controls how densely the enchant glint texture is tiled on UI items. Higher values make the glint pattern appear smaller and repeat more frequently. Lower values make it appear larger and repeat less frequently.
 	- `world_inverse_uv_scale_multiplier`
 		- Type: `int`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`)
 		- Controls how densely the enchant glint texture is tiled on world items and equipment. Higher 	values make the glint pattern appear smaller and repeat more frequently. Lower values make it appear larger and repeat less frequently.
 	- `ui_uv_anim_speed_multiplier`
 		- Type: `float`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`)
 		- Scales the UV animation speed for the enchant glint rendered on UI items. Higher values make the glint move faster. Lower values make it move more slowly. This setting overrides the vanilla `Glint speed` setting.
 	- `world_uv_anim_speed_multiplier`
 		- Type: `float`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`)
 		- Scales the UV animation speed for the enchant glint rendered on world items and equipment. Higher values make the glint move faster. Lower values make it move more slowly. This setting overrides the vanilla `Glint speed` setting.
 
 ---
 
 #### `entity_hitboxes`
 - Type: `object`
-- Draws a wire frame along an entity's hitbox bounds.
+- Draws an outline along each visible entity's hitbox bounds.
 - Fields:
 	- `enabled`
 		- Type: `bool`
@@ -541,7 +663,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `line_thickness`
 		- Type: `float`
 		- Allowed values: [`0.0`, `0.1`]
-		- Sets the thickless (in world units) for each hitbox 'line'. This setting is only applicable if `entity_hitboxes.use_line_thickness` is enabled.
+		- Sets the thickness of each hitbox edge in blocks when `use_line_thickness` is enabled.
 	- `primary_hitbox_color`
 		- Type: `RGBA HTML color`
 		- Allowed values: [`#00000000`, `#FFFFFFFF`]
@@ -549,7 +671,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `primary_hitbox_selected_color`
 		- Type: `RGBA HTML color`
 		- Allowed values: [`#00000000`, `#FFFFFFFF`]
-		- Sets the color for the primary hitbox when the local player is looking at the entity within pick distance.
+		- Sets the primary hitbox color for the entity selected by the camera's pick ray.
 	- `render_for_players_only`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -561,7 +683,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `use_line_thickness`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Toggles the application of `entity_hitboxes.line_thickness` on hitbox rendering. When `true`, hitbox edges are rendered as quads using the thickness set by `entity_hitboxes.line_thickness` (in world units). When `false`, edges are drawn as simple line strips and `entity_hitboxes.line_thickness` is ignored. Thick lines are more expensive to render; turn this setting off for the more performant path if you don't need a custom thickness.
+		- Draws each hitbox edge as a 3D bar with rectangular faces (quads). Each bar is `line_thickness` blocks wide and deep. When disabled, thin line segments trace the edges as a wireframe.
 
 ---
 
@@ -672,35 +794,48 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 #### `first_person_model_matrix`
 - Type: `object`
-- Applies a custom translation, rotation, and scale transform to the first-person held item/model matrix. The transform is applied in translation -> rotation -> scale order. Rotation values are specified in degrees and applied in x -> y -> z order.
+- Applies separate translation, rotation, and scale transforms to first-person held items and the fire overlay. Each transform is applied in translation -> rotation -> scale order. Rotation values are specified in degrees and applied in x -> y -> z order.
 - Fields:
 	- `enabled`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
 		- Toggles the parent object.
-	- `translation`
-		- Type: `Vec3`
-		- Allowed values: *unbounded*
-		- Applies an additive translation to the first-person model matrix. Values are specified as `{x, y, z}` offsets.
-	- `rotation`
-		- Type: `Vec3`
-		- Allowed values: *unbounded*
-		- Applies an additive rotation to the first-person model matrix. Values are specified in degrees as `{x, y, z}` Euler angles.
-	- `scale`
-		- Type: `Vec3`
-		- Allowed values: *unbounded*
-		- Applies scale to the first-person model matrix. Values are specified as `{x, y, z}` scale factors, where `{1.0, 1.0, 1.0}` leaves the model at its original size. Negative scale values may mirror the mode, but can cause rendering artifacts such as inverted/backface-culled geometry.
+	- `base`
+		- Type: `object`
+		- Adjusts the first-person held item and hand transforms.
+		- Fields:
+			- `translation`
+				- Type: `Vec3`
+				- Allowed values: (`-∞`, `+∞`) for each component
+				- Applies an additive translation. Values are specified as `{x, y, z}` offsets.
+			- `rotation`
+				- Type: `Vec3`
+				- Allowed values: (`-∞`, `+∞`) for each component
+				- Applies an additive rotation. Values are specified in degrees as `{x, y, z}` Euler angles.
+			- `scale`
+				- Type: `Vec3`
+				- Allowed values: (`-∞`, `+∞`) for each component
+				- Applies `{x, y, z}` scale factors. `{1.0, 1.0, 1.0}` preserves the original size. Negative values may mirror the model, but can cause rendering artifacts such as inverted or backface-culled geometry.
+	- `fire`
+		- Type: `object`
+		- Adjusts the first-person flames displayed while the player is on fire.
+		- Fields:
+			- `translation`
+				- Type: `Vec3`
+				- Allowed values: (`-∞`, `+∞`) for each component
+				- Applies an additive translation to the fire overlay. Values are specified as `{x, y, z}` offsets.
+			- `rotation`
+				- Type: `Vec3`
+				- Allowed values: (`-∞`, `+∞`) for each component
+				- Applies an additive rotation to the fire overlay. Values are specified in degrees as `{x, y, z}` Euler angles.
+			- `scale`
+				- Type: `Vec3`
+				- Allowed values: (`-∞`, `+∞`) for each component
+				- Applies `{x, y, z}` scale factors to the fire overlay. `{1.0, 1.0, 1.0}` preserves the original size. Negative values may mirror the flames, but can cause rendering artifacts such as inverted or backface-culled geometry.
 	- `show_debug_editor`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Shows an in-game editor UI for adjusting the `first_person_model_matrix.translation`, `first_person_model_matrix.rotation`, and `first_person_model_matrix.scale` values at runtime. This is intended for debugging and tuning transform values.
-
----
-
-#### `first_person_sword_block_anim`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Plays the MCJE 1.7 first-person sword blocking animation while interacting with a sword. This is strictly a visual animation: MCBE does not have a networked sword blocking mechanic, so enabling this setting does not change combat behavior.
+		- Shows an in-game editor with separate `Base` and `Fire` tabs for adjusting translation, rotation, and scale at runtime. Each tab has independent reset controls.
 
 ---
 
@@ -796,6 +931,26 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ---
 
+#### `full_enchanting_tooltips`
+
+- Type: `object`
+- Lists every enchantment provided for an enchanting-table option instead of showing only the first enchantment. Applies to option tooltips and selected-option text. Enchantment names use fixed English text, and translation keys are not supported.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `level_format`
+		- Type: `int`
+		- Allowed values: see [Enchantment Level Formats](#enchantment-level-formats) for a list of enumerated values.
+		- Selects how enchantment levels are displayed. Out-of-range integers are clamped to [`0`, `2`].
+	- `include_single_level_tiers`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Includes the level for single-level enchantments such as `Mending`, using the selected `level_format` (e.g., `Mending 1` or `Mending I`). When `false`, these levels are omitted in every format mode.
+
+---
+
 #### `gui_scale`
 - Type: `object`
 - Overrides the vanilla `GUI Scale Modifier` setting, with added flexibility.
@@ -860,7 +1015,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 				- Selects which screen anchor point the armor display will be aligned to.
 			- `screen_anchor_offset`
 				- Type: `vec2`
-				- Allowed values: *unbounded*
+				- Allowed values: (`-∞`, `+∞`) for each component
 				- Adjusts the position of the armor display relative to the chosen `item_display.armor.screen_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
 			- `content_anchor`
 				- Type: `int`
@@ -880,7 +1035,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 				- Sets the scale of each rendered armor item. A scale of `1.0` corresponds to the vanilla 16 * 16 pixel item icon size.
 			- `item_spacing`
 				- Type: `float`
-				- Allowed values: *unbounded*
+				- Allowed values: (`-∞`, `+∞`)
 				- Sets the spacing, in raw screen pixels, between each rendered armor item.
 			- `align_vertically`
 				- Type: `bool`
@@ -912,7 +1067,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 								- Defines which anchor point on the durability text's bounding box is aligned to `item_display.armor.durability.text.item_anchor`.
 							- `offset`
 								- Type: `vec2`
-								- Allowed values: *unbounded*
+								- Allowed values: (`-∞`, `+∞`) for each component
 								- Adjusts the position of the durability text relative to the chosen `item_display.armor.durability.text.item_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
 							- `size`
 								- Type: `float`
@@ -936,7 +1091,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 								- Enables a shadow effect for the durability text.
 							- `shadow_offset`
 								- Type: `vec2`
-								- Allowed values: *unbounded*
+								- Allowed values: (`-∞`, `+∞`) for each component
 								- Sets the offset of the durability text shadow relative to the text positioning. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up. This setting is only applicable if `item_display.armor.durability.text.shadow` is enabled.
 							- `shadow_color`
 								- Type: `RGBA HTML color`
@@ -960,7 +1115,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 								- Defines which anchor point on the durability bar's bounding box is aligned to `item_display.armor.durability.bar.item_anchor`.
 							- `offset`
 								- Type: `vec2`
-								- Allowed values: *unbounded*
+								- Allowed values: (`-∞`, `+∞`) for each component
 								- Adjusts the position of the durability bar relative to the chosen `item_display.armor.durability.bar.item_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
 							- `size`
 								- Type: `vec2`
@@ -982,54 +1137,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 						  		- Type: `RGBA HTML color`
 						  		- Allowed values: [`#00000000`, `#FFFFFFFF`]
 						  		- Sets the durability bar color used at 100% durability.
-
----
-
-#### `item_matrix_fix`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Restores the default hardcoded matrix transformations (position, rotation, and scale) for certain vanilla items (such as snowballs and arrows) and all custom items, bypassing their data-driven settings.
-
----
-
-#### `java_first_person_bow_anim`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Enables a custom reimplementation of the MCJE 1.7 first-person bow animation. This replaces the default JSON-based bow attachable (in both first and third-person). When enabled, it also allows `enchant_glint_color.smooth_world_uv` to apply to bows.
-
----
-
-#### `java_first_person_crossbow_anim`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Enables a custom reimplementation of the MCJE 1.14+ first-person crossbow animation. This replaces the default JSON-based crossbow attachable (in both first and third-person). When enabled, it also allows `enchant_glint_color.smooth_world_uv` to apply to crossbows.
-
----
-
-#### `java_view_bobbing`
-- Type: `object`
-- A faithful reimplementation of the MCJE view bobbing animation, with extra configurations. This feature only applies when the vanilla `View Bobbing` setting is enabled.
-- Fields:
-	- `enabled`
-		- Type: `bool`
-		- Allowed values: {`true`, `false`}
-		- Toggles the parent object.
-	- `camera_strength`
-		- Type: `float`
-		- Allowed values: *unbounded*
-		- Controls the strength of the *camera* bobbing animation. Higher values indicate a stronger bob, and vice versa.
-	- `first_person_objects_strength`
-		- Type: `float`
-		- Allowed values: *unbounded*
-		- Controls the strength of the bobbing animation applied to *first-person objects* (equipped mainhand/offhand items, hands, etc. rendered in the first-person perspective). Higher values indicate a stronger bob, and vice versa.
-	- `first_person_objects_velocity_damping_multiplier`
-		- Type: `float`
-		- Allowed values: *unbounded*
-		- Scales how quickly a first-person object's motion decays after the camera orbits. Lower values make it ease back more slowly and smoothly. Higher values make it settle faster.
-	- `first_person_objects_velocity_stiffness_multiplier`
-		- Type: `float`
-		- Allowed values: *unbounded*
-		- Scales the spring strength pulling the first-person object back to its rest pose. Lower values appear more 'springy'. Higher values appear stiffer/tighter.
 
 ---
 
@@ -1083,13 +1190,6 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 ---
 
-#### `limb_swing_anim_fix`
-- Type: `bool`
-- Allowed values: {`true`, `false`}
-- Fixes a longstanding animation bug in which the arm and leg movement swing for the local player appears 'stiff', and has a weaker amplitude when the jump key is pressed.
-
----
-
 #### `mention_sound`
 - Type: `object`
 - Plays a configurable sound when an incoming chat message mentions the signed-in player's display name or one of the configured additional triggers. Chat formatting codes are ignored when checking for mentions.
@@ -1104,11 +1204,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
     	- Sets the sound to play when a mention is detected. This should be the name of a sound event defined in `.\sounds\sound_definitions.json` of an active resource pack (such as the vanilla one). The same sound identifier can also be tested via the vanilla `/playsound` command.
 	- `volume`
     	- Type: `float`
-    	- Allowed values: [`0.0`, `+∞`)
+		- Allowed values: [`0.0`, `+∞`)
     	- Sets the mention sound volume.
 	- `pitch`
     	- Type: `float`
-    	- Allowed values: [`0.0`, `+∞`)
+		- Allowed values: [`0.0`, `+∞`)
     	- Sets the mention sound pitch.
 	- `require_at_symbol`
     	- Type: `bool`
@@ -1123,7 +1223,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 
 #### `movement_options`
 - Type: `object`
-- Various settings to control player movement.
+- Various options to control player movement.
 - Fields:
 	- `enabled`
 		- Type: `bool`
@@ -1174,7 +1274,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Enables name tag rendering for the local player.
 	- `local_pos_offset`
 		- Type: `vec2`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`) for each component
 		- Applies a local offset to the name tag in *screen-space* relative to the camera orientation. Positive X moves the tag right (perpendicular to the camera's view direction), and positive Y moves it upward in the camera's local space.
 	- `scale`
 		- Type: `float`
@@ -1202,11 +1302,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Sets the color for the text shadow when the name tag is darkened. This color is always applied, regardless of color format specifiers (e.g. `§a`). This setting is only applicable if `name_tag_options.text_shadow` is enabled.
 	- `text_shadow_offset`
 		- Type: `vec2`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`) for each component
 		- Offsets the text shadow relative to the text positioning. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up. This setting is only applicable if `name_tag_options.text_shadow` is enabled.
 	- `world_pos_offset_y`
 		- Type: `float`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`)
 		- Offsets the name tag world position along the Y axis. Positive Y moves up, negative Y moves down.
 
 ---
@@ -1229,11 +1329,11 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Scales the in-game sensitivity in linear proportion to the y dimension of the MCBE window size. The same logic as `override_game_sensitivity.scale_to_window_size_x` applies, but for the y dimension.
 	- `value`
 		- Type: `float`
-		- Allowed values: *unbounded*
+		- Allowed values: [`0.0`, `+∞`)
 		- The raw in-game sensitivity value to be overridden. This value has the same units as the vanilla sensitivity slider. This field and the vanilla slider write to the same value-last write wins. If you adjust the vanilla slider, it overwrites this field (the override stops applying) until you set value again, either by re-injecting, or executing `.config reload`.
 	- `weighted_scale_multiplier`
 		- Type: `Vec2`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`) for each component
 		- The relative weighting of the raw camera turn delta per axis. Increasing one component biases the turn toward that axis and can make the other axis feel proportionally slower.
 
 ---
@@ -1248,7 +1348,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Toggles the parent object.
 	- `base_emitter_block_render_distance`
 		- Type: `int`
-		- Allowed values: [`0`, `4294967295`]
+		- Allowed values: [`0`, `+∞`)
 		- Sets the default maximum render distance, in blocks, between the camera and a particle emitter's world position. This value is used for particles that do not define `particle_options.particles.<particle identifier>.emitter_block_render_distance`.
 	- `disable_all_rendering`
 		- Type: `bool`
@@ -1267,7 +1367,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 					- `emitter_block_render_distance`
 						- Type: `int`
 						- Presence: optional
-						- Allowed values: [`0`, `4294967295`]
+						- Allowed values: [`0`, `+∞`)
 						- Fallback when omitted: Uses `particle_options.base_emitter_block_render_distance`.
 						- Overrides `particle_options.base_emitter_block_render_distance` for this particle.
 					- `disable_rendering`
@@ -1354,7 +1454,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Selects which screen anchor point the display will be aligned to.
 	- `screen_anchor_offset`
 		- Type: `vec2`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`) for each component
 		- Adjusts the position of the display relative to the chosen `saturation_display.screen_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
 	- `content_anchor`
 		- Type: `int`
@@ -1374,7 +1474,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Sets the color for the text shadow. This setting is only applicable if `saturation_display.text_shadow` is enabled.
 	- `text_shadow_offset`
 		- Type: `vec2`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`) for each component
 		- Sets offset of the text shadow relative to the text positioning. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up. This setting is only applicable if `saturation_display.text_shadow` is enabled.
 	- `text_size`
 		- Type: `float`
@@ -1501,7 +1601,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 	- `disable_flying_inventory_item_anim`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
-		- Disables the 'flying item' animation when item stacks are moved between container slots, such as when shift-clicking an item stack or using an inventory hotkey. This is a strictly visual change and does not affect how or when the item stack is moved.
+		- Disables the 'flying item' animation when item stacks are moved between container slots, such as when shift-clicking an item stack or using an inventory hotkey. Destination slot icons appear immediately instead of waiting for the animation to finish. This is a strictly visual change and does not affect how or when the item stack is moved.
 	- `disable_hud_vignette`
 		- Type: `bool`
 		- Allowed values: {`true`, `false`}
@@ -1532,7 +1632,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 				- Selects which screen anchor point the paper doll will be aligned to.
 			- `screen_anchor_offset`
 				- Type: `vec2`
-				- Allowed values: *unbounded*
+				- Allowed values: (`-∞`, `+∞`) for each component
 				- Adjusts the position of the paper doll relative to the chosen `ui_options.paper_doll.screen_anchor`, measured in raw screen pixels. Positive X moves right, negative X moves left; positive Y moves down, negative Y moves up.
 			- `content_anchor`
 				- Type: `int`
@@ -1540,7 +1640,7 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 				- Defines which anchor point on the paper doll's bounding box is aligned to `ui_options.paper_doll.screen_anchor`.
 			- `scale`
 				- Type: `float`
-				- Allowed values: *unbounded*
+				- Allowed values: (`-∞`, `+∞`)
 				- Applies a uniform scale factor to the paper doll. A scale of `1.0` preserves its vanilla size.
 			- `y_rotation`
 				- Type: `float`
@@ -1553,6 +1653,25 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 - Type: `bool`
 - Allowed values: {`true`, `false`}
 - Uses Xbox Live profile pictures ('gamerpics') in place of the default Marketplace/Persona-generated headshots. Images are fetched in batches, downloaded at the game's 64×64 profile-picture size, and saved in `%LOCALAPPDATA%\Temp\Minecraft Bedrock\minecraftpe\XblProfileCache\`. Existing cache files are reused across DLL reloads. World player list images are refreshed when downloaded files become available in both JSON UI and Ore UI screens. Fetching requires an available signed-in Xbox user. Requests are paced and retried after Xbox rate limits; the feature can therefore take time to fill images in the world player list when many players join at once.
+
+---
+
+#### `world_interact_options`
+- Type: `object`
+- Sets independent minimum intervals between attack and interact presses while the player has input control in the world. These intervals do not apply when that control is released (such as when a container screen is open). Presses received too soon are ignored until released and do not extend the interval. Continuous actions from an accepted hold retain their normal behavior.
+- Fields:
+	- `enabled`
+		- Type: `bool`
+		- Allowed values: {`true`, `false`}
+		- Toggles the parent object.
+	- `min_attack_interval_ms`
+		- Type: `int`
+		- Allowed values: [`0`, `+∞`)
+		- Sets the minimum time in milliseconds between accepted attack presses.
+	- `min_interact_interval_ms`
+		- Type: `int`
+		- Allowed values: [`0`, `+∞`)
+		- Sets the minimum time in milliseconds between accepted interact presses, including using items and interacting with blocks or entities.
 
 ---
 
@@ -1574,19 +1693,19 @@ Java Inventory, Input, and Movement System (JIIMS) overhauls the input, and inpu
 		- Toggles whether first-person objects are hidden while this feature is enabled.
 	- `inverse_easing_multiplier`
 		- Type: `float`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`)
 		- Controls how quickly the zoom transitions to a new level after scrolling. The transition uses an [ease-in-out cubic](https://easings.net/#easeInOutCubic) curve, meaning it starts slowly, speeds up near the middle, and slows down again as it reaches the target zoom level. A value of `1.0` uses the default transition speed. Lower values make the transition slower, higher values make it faster, and `0.0` disables the easing animation.
 	- `inverse_fov_multiplier`
 		- Type: `float`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`)
 		- Sets the initial FOV amount the moment you start zooming (before any scroll). Effective FOV = `<base fov>` / `zoom.inverse_fov_multiplier`. A multiplier of `1.0` is the baseline, indicating that the initial zoom amount is equal to: `1.0` * the current FOV (identical).
 	- `inverse_sensitivity_multiplier`
 		- Type: `float`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`)
 		- Scales mouse sensitivity while zooming. Effective sensitivity = `<base sensitivity>` / `zoom.inverse_sensitivity_multiplier`. A multiplier of `1.0` is the baseline, indicating that the sensitivity is equal to: `1.0` * the current sensitivity (identical).
 	- `scroll_delta`
 		- Type: `float`
-		- Allowed values: *unbounded*
+		- Allowed values: (`-∞`, `+∞`)
 		- The step size for scroll-based zoom changes. Smaller values equate to finer control (smaller jumps). Larger values equate to coarser control (bigger jumps). Scrolling up on the mouse adds the delta (zooms in if positive), scrolling down subtracts the delta (zooms out if positive).
 
 ---
@@ -1731,3 +1850,13 @@ Keybinds use Windows virtual-key codes, with `0` representing an unassigned key.
 | First Person       |     0 |
 | Third Person Back  |     1 |
 | Third Person Front |     2 |
+
+---
+
+#### Enchantment Level Formats
+
+| Enumeration | Value | Description |
+| ----------- | ----: | ----------- |
+| Vanilla     |     0 | Roman numerals I–X for levels 1–10; decimal numbers for other levels. |
+| Decimal     |     1 | Raw numeric levels (e.g., `Sharpness 3`). |
+| Roman       |     2 | Uppercase Roman numerals for positive levels, including levels above 10 (e.g., `Sharpness XI`). Zero and negative levels remain decimal. |
